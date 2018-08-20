@@ -1,0 +1,93 @@
+Backlog:
+
+UI & GUI
+[ ] Save dialog does not start at the location of the opened file.
+[ ] Fix issue with color overlay performing draw operations when over a pixel
+[ ] Right-Click wheel menu
+[ ] Controlling multiple overlays
+[ ] Separation of overlay code and responsibilities
+[ ] Activate and deactivate overlay
+[ ] Event capturing in overlays
+
+New Features
+[ ] 2D skeletal animation
+[ ] Checkpoint save to save the image in it's current state, also a save for a few 
+  edits to overwrite the checkpoint you just saved
+[ ] A revision tree that can be used to go back and modify revisions to create
+  new branches
+[ ] Relative-area-noise generator
+[ ] Perlin Noise generator
+[ ] Particle effects generator
+[ ] Scrolling threw images in one window
+[ ] Textured fill, noise fill
+
+Colors & Palettes
+[ ] Right-Click pallette
+[ ] Auto-Pallette generator
+[ ] Select all similar colors in a selected area.
+[ ] Named Color Palettes
+
+Tilesets
+[ ] Fix Tileset to use a single image 
+[ ] Tileset creation for different sized tilesets
+[ ] Tile offsets
+[ ] Tile drag and drop, drag and drop tiles to different locations
+
+Frames & Animation
+[ ] An option to delete frames.
+[ ] An option to reorder frames (drag frame and drop it somewhere else)
+[ ] Keeping the Color option when scrolling frames would be nice.
+
+Settings & Menus
+[ ] Save as multiple file types
+[ ] Option to change Grid color.
+[ ] Option to Export as a range of images in a custom folder location.
+[ ] Application Settings and temporary folder
+
+Pixel Manipulations
+[ ] Select all similar colors in the entire image
+[ ] Right-Click pixel manipulation tool
+[ ] Ability to nudge 1px using the arrow keys.
+[ ] Copy and drag pixels around
+[ ] Drag Pixels
+[ ] Select Pixels
+[ ] Select area
+[ ] Manipulated selected pixels
+[ ] Change shade of all similar colored pixels in image
+
+TODOs:
+[ ] Save last opened folder to temp storage
+[ ] Add recently saved menu option list
+[ ] Show palate of colors currently in the image
+[ ] Add keyboard shortcuts for controls
+[ ] Debug similar color highlighting
+[ ] Update Map Preview update with changes to image automatically
+[ ] Open images from command line args on start
+[ ] Undo Ctrl-Z option
+[ ] Layers
+[ ] Draw other animation frames below current frame.
+
+2017-08-13
+[X] Remove Popup for size when app starts
+[X] Remember directory in save dialog on subsequent saves
+[X] Remember save & open directory after closing app
+
+2012-11-27
+[X] Fix issue with current image disappearing when the first frame added
+
+2012-10-08
+[X] Less lag when bringing up the file browser (Save, Add Sketch Image, etc.)
+
+2011-04-06
+[ ] Pallette Editor
+
+2011-04-05
+[X] Add drag'n'drop file loading 
+
+2011-04-01
+[X] Flood Fill
+[X] Fix Right-Click eyedropper
+[X] Fix Color popup functionality
+
+2011-03-20
+[X] Color Palette from Image

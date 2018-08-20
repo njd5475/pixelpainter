@@ -1,0 +1,543 @@
+package com.pixel.painter.settings;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Array;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+
+import com.pixel.painter.settings.Json.JsonObject;
+
+import java.util.LinkedHashMap;
+
+public final class Json {
+
+  protected enum Type {
+    CLOSE_ARRAY, CLOSE_OBJECT, DIGIT, DOUBLE_QUOTE, KEYVAL_SEPARATOR, NEWLINE, OBJECT_SEPARATOR, OPEN_ARRAY,
+    OPEN_OBJECT, PERIOD, SINGLE_QUOTE, UNKNOWN, WHITESPACE
+  };
+
+  protected static class Token {
+    private Type          _type;
+    private StringBuilder contents;
+    private int           line = 0, col = 0;
+
+    public Token(char ch, int line, int col) {
+      _type = type(ch);
+      contents = new StringBuilder();
+      contents.append(ch);
+      this.line = line;
+      this.col = col;
+    }
+
+    public int getColumn() {
+      return col;
+    }
+
+    public String getContents() {
+      return contents.toString();
+    }
+
+    public int getLine() {
+      return line;
+    }
+
+    public Type getType() {
+      return _type;
+    }
+
+    public boolean is(Type t) {
+      return _type == t;
+    }
+
+    public boolean isOneOf(Type... types) {
+      for(Type t : types) {
+        if (is(t)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public boolean isWhitespace() {
+      return isOneOf(Type.NEWLINE, Type.WHITESPACE);
+    }
+
+    public boolean matches(char c) {
+      return contents.toString().equals(c);
+    }
+
+    public boolean matches(String... any) {
+      for(String match : any) {
+        if (contents.toString().equals(match)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public Token next(char ch) {
+      Type nextType = type(ch);
+      if (_type == null) {
+        _type = nextType;
+      }
+
+      int nLine = line, nCol = col + 1;
+      if (nextType == Type.NEWLINE) {
+        ++nLine;
+        nCol = 1;
+      }
+
+      if (_type != nextType || _type == Type.NEWLINE || _type == Type.DOUBLE_QUOTE || _type == Type.CLOSE_OBJECT
+          || _type == Type.OPEN_OBJECT || _type == Type.OPEN_ARRAY || _type == Type.CLOSE_ARRAY) {
+        return new Token(ch, nLine, nCol);
+      } else {
+        contents.append(ch);
+      }
+
+      return this;
+    }
+
+    public String toString() {
+      return String.format("T[c='%s',ln=%d,col=%d,t=%s]", getContents().replaceAll("\n", "\\\\n"), getLine(),
+          getColumn(), getType().name());
+    }
+
+    public Type type(char ch) {
+      if (ch == '{') {
+        return Type.OPEN_OBJECT;
+      } else if (ch == '}') {
+        return Type.CLOSE_OBJECT;
+      } else if (ch == '[') {
+        return Type.OPEN_ARRAY;
+      } else if (ch == ']') {
+        return Type.CLOSE_ARRAY;
+      } else if (ch == '"') {
+        return Type.DOUBLE_QUOTE;
+      } else if (ch == '\'') {
+        return Type.SINGLE_QUOTE;
+      } else if (ch == ',') {
+        return Type.OBJECT_SEPARATOR;
+      } else if (ch == ':') {
+        return Type.KEYVAL_SEPARATOR;
+      } else if (ch == ' ' || ch == '\t') {
+        return Type.WHITESPACE;
+      } else if (ch >= '0' && ch <= '9') {
+        return Type.DIGIT;
+      } else if (ch == '.') {
+        return Type.PERIOD;
+      } else if (ch == '\n') {
+        return Type.NEWLINE;
+      }
+      return Type.UNKNOWN;
+    }
+  }
+
+  @SuppressWarnings("serial")
+  public static class TokenError extends Error {
+    public TokenError(String err) {
+      super(err);
+    }
+
+    public TokenError(Token t, Type t2) {
+      super("Error: Unexpected token: " + t.toString() + " expected " + t2.name());
+    }
+
+    public TokenError(Type expected) {
+      super("Error: Unexpected end of stream, expected " + expected.name());
+    }
+  }
+
+  private static String concateTill(List<Token> tokens, Type t) {
+    StringBuilder all = new StringBuilder("");
+    while (!tokens.get(0).is(t)) {
+      all.append(tokens.remove(0).getContents());
+    }
+    return all.toString();
+  }
+
+  private static void expect(List<Token> tokens, Type t) {
+    if (!tokens.isEmpty() && tokens.get(0).is(t)) {
+      tokens.remove(0);
+    } else if (!tokens.isEmpty()) {
+      throw new TokenError(tokens.get(0), t);
+    } else {
+      throw new TokenError(t);
+    }
+  }
+
+  private static List<Token> ignoreWhitespace(List<Token> tokens) {
+    while (!tokens.isEmpty() && tokens.get(0).isWhitespace()) {
+      tokens.remove(0);
+    }
+    return tokens;
+  }
+
+  public static void main(String... args) {
+    String strObj = "{\"z\" : [{\"a\":\"\"},{},    { },{}, \'6\'], \" some \":true, \"list\":[9,54,4,true,false,{}]\n, \"val_null\": null}";
+    Map<String, Object> jObj = parse(strObj);
+    assert (jObj != null);
+    Map<String, Object> not = new LinkedHashMap<String, Object>(jObj);
+    System.out.println(strObj);
+    System.out.println(toJson(not));
+  }
+
+  private static Map<String, Object> objectContents(List<Token> tokens, Map<String, Object> obj) {
+    if (tokens.isEmpty()) {
+      throw new TokenError("Object contents");
+    }
+    ignoreWhitespace(tokens);
+    while (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
+      objectField(tokens, obj);
+      ignoreWhitespace(tokens);
+      if (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
+        expect(tokens, Type.OBJECT_SEPARATOR);
+      }
+    }
+    return obj;
+  }
+
+  private static void objectField(List<Token> tokens, Map<String, Object> obj) {
+    ignoreWhitespace(tokens);
+    String key = stringKey(tokens);
+    ignoreWhitespace(tokens);
+    expect(tokens, Type.KEYVAL_SEPARATOR);
+    Object value = objectValue(tokens);
+    if (obj.containsKey(key)) {
+      throw new TokenError("Duplicate key found");
+    }
+    obj.put(key, value);
+  }
+
+  private static Object objectValue(List<Token> tokens) {
+    ignoreWhitespace(tokens);
+    Object o = null;
+    Token top = tokens.get(0);
+    if (top.is(Type.DOUBLE_QUOTE)) {
+      expect(tokens, Type.DOUBLE_QUOTE);
+      o = concateTill(tokens, Type.DOUBLE_QUOTE);
+      expect(tokens, Type.DOUBLE_QUOTE);
+    } else if (top.is(Type.SINGLE_QUOTE)) {
+      expect(tokens, Type.SINGLE_QUOTE);
+      o = concateTill(tokens, Type.SINGLE_QUOTE);
+      expect(tokens, Type.SINGLE_QUOTE);
+    } else if (top.is(Type.OPEN_OBJECT)) {
+      o = parseObject(tokens);
+    } else if (top.is(Type.OPEN_ARRAY)) {
+      o = parseArray(tokens);
+    } else if (tokens.get(0).matches("true", "false")) {
+      o = parseBoolean(tokens);
+    } else if (tokens.get(0).matches("null")) {
+      tokens.remove(0);
+      o = null;
+    } else if (tokens.get(0).isOneOf(Type.DIGIT, Type.PERIOD)) {
+      o = parseNumber(tokens);
+    }
+    return o;
+  }
+
+  public static Map<String, Object> parse(InputStream is) {
+    return parse(new InputStreamReader(is));
+  }
+
+  public static Map<String, Object> parse(Reader r) {
+    List<Token> tokens = new LinkedList<Token>();
+    try {
+      Token current = new Token((char) r.read(), 1, 1);
+      int nextCh = -1;
+      Token next;
+      while (r.ready() && (nextCh = r.read()) != -1) {
+        next = current.next((char) nextCh);
+        if (next != current) {
+          tokens.add(current);
+          current = next;
+        }
+      }
+      tokens.add(current);
+
+      return parseObject(tokens);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return new LinkedHashMap<String, Object>();
+  }
+
+  public static Map<String, Object> parse(String json) {
+    return parse(new StringReader(json));
+  }
+
+  public static JsonObject parseToWrapper(String json) {
+    return new JsonObject(parse(json));
+  }
+
+  public static JsonObject parseFileObject(File configFile) {
+    try {
+      String jsonFile = new String(Files.readAllBytes(configFile.toPath()), Charset.defaultCharset());
+      return parseToWrapper(jsonFile);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  public static JsonObject parseFileObject(File configFile, String defaultObj) {
+    try {
+      String jsonFile = new String(Files.readAllBytes(configFile.toPath()), Charset.defaultCharset());
+      if (jsonFile.isEmpty() || jsonFile.trim().isEmpty()) {
+        jsonFile = defaultObj;
+      }
+      return parseToWrapper(jsonFile);
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (TokenError err) {
+      System.err.println("WARNING: " + configFile + " had a syntax error in it replacing with " + defaultObj);
+      return parseToWrapper(defaultObj);
+    }
+    return null;
+  }
+
+  private static List<Object> parseArray(List<Token> tokens) {
+    List<Object> array = new LinkedList<Object>();
+    expect(tokens, Type.OPEN_ARRAY);
+    while (!tokens.get(0).is(Type.CLOSE_ARRAY)) {
+      ignoreWhitespace(tokens);
+      Object o = objectValue(tokens);
+      array.add(o);
+      ignoreWhitespace(tokens);
+      if (!tokens.get(0).is(Type.CLOSE_ARRAY)) {
+        expect(tokens, Type.OBJECT_SEPARATOR);
+      }
+    }
+    expect(tokens, Type.CLOSE_ARRAY);
+    return array;
+  }
+
+  private static Object parseBoolean(List<Token> tokens) {
+    if (tokens.get(0).matches("true")) {
+      tokens.remove(0);
+      return true;
+    } else if (tokens.get(0).matches("false")) {
+      tokens.remove(0);
+      return false;
+    } else {
+      throw new TokenError("Truly unexpected error");
+    }
+  }
+
+  private static Object parseNumber(List<Token> tokens) {
+    StringBuilder number = new StringBuilder();
+    while (tokens.get(0).is(Type.DIGIT)) {
+      number.append(tokens.remove(0).getContents());
+    }
+    if (tokens.get(0).is(Type.PERIOD)) {
+      number.append(tokens.remove(0).getContents());
+      while (tokens.get(0).is(Type.DIGIT)) {
+        number.append(tokens.remove(0).getContents());
+      }
+      return Double.parseDouble(number.toString());
+    } else {
+      return Integer.parseInt(number.toString());
+    }
+  }
+
+  private static Map<String, Object> parseObject(List<Token> tokens) {
+    ignoreWhitespace(tokens);
+    expect(tokens, Type.OPEN_OBJECT);
+    Map<String, Object> newObj = objectContents(tokens, new LinkedHashMap<String, Object>());
+    ignoreWhitespace(tokens);
+    expect(tokens, Type.CLOSE_OBJECT);
+    ignoreWhitespace(tokens);
+    return newObj;
+  }
+
+  public static Map<String, Object> parseResource(String resourceName) {
+    return parseResource(resourceName, Json.class.getClassLoader());
+  }
+
+  public static Map<String, Object> parseResource(String resName, ClassLoader classLoader) {
+    return parse(classLoader.getResourceAsStream(resName));
+  }
+
+  public static JsonObject parseResourceObject(String resName) {
+    return new JsonObject(parseResource(resName));
+  }
+
+  public static JsonObject parseResourceObject(String resName, ClassLoader classLoader) {
+    return new JsonObject(parseResource(resName, classLoader));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static String toJson(Map<String, Object> object) {
+    StringBuilder toReturn = new StringBuilder("");
+    Object comma = new Object();
+    // reduce
+    if (!object.isEmpty()) {
+      Stack<Object> recurse = new Stack<Object>();
+      recurse.push(object);
+      toReturn.append("{");
+      while (!recurse.isEmpty()) {
+        Object o = recurse.pop();
+        if (o instanceof Map) {
+          Map<Object, Object> mp = (Map<Object, Object>) o;
+          if (!mp.isEmpty()) {
+            Object key = mp.keySet().iterator().next();
+            Object val = mp.remove(key);
+            toReturn.append(String.format("\"%s\":", key));
+            recurse.push(mp);
+            if (val instanceof Array || val instanceof String[] || val instanceof int[] || val instanceof float[]
+                || val instanceof double[] || val instanceof short[]) {
+              val = Arrays.asList((Object[]) val);
+            }
+            if (val instanceof Iterable) {
+              toReturn.append("[");
+            } else if (val instanceof Map) {
+              toReturn.append("{");
+            }
+            if (!mp.isEmpty()) {
+              recurse.push(comma);
+            }
+            recurse.push(val);
+          } else {
+            toReturn.append("}");
+          }
+        } else if (o instanceof Iterable || o instanceof Array || o instanceof String[] || o instanceof int[]
+            || o instanceof float[] || o instanceof double[] || o instanceof short[]) {
+          if (o instanceof Array || o instanceof String[] || o instanceof int[] || o instanceof float[]
+              || o instanceof double[] || o instanceof short[]) {
+            o = Arrays.asList((Object[]) o);
+          }
+          Iterable<Object> arr = (Iterable<Object>) o;
+          if (arr.iterator().hasNext()) {
+            List<Object> tmp = new LinkedList<Object>();
+            Iterator<Object> iter = arr.iterator();
+            Object first = iter.next();
+            while (iter.hasNext()) {
+              tmp.add(iter.next());
+            }
+
+            recurse.push(tmp);
+            if (!tmp.isEmpty()) {
+              recurse.push(comma);
+            }
+            recurse.push(first);
+            if (first instanceof Map) {
+              toReturn.append("{");
+            } else if (first instanceof Iterable) {
+              toReturn.append("[");
+            }
+          } else {
+            toReturn.append("]");
+          }
+        } else if (o == comma) {
+          toReturn.append(',');
+        } else if (o == null) {
+          toReturn.append("null");
+        } else if (o instanceof Number || o instanceof Boolean) {
+          toReturn.append(o.toString());
+        } else {
+          toReturn.append('"');
+          toReturn.append(o.toString());
+          toReturn.append('"');
+        }
+      }
+    } else {
+      toReturn.append("{}");
+    }
+    return toReturn.toString();
+  }
+
+  private static String stringKey(List<Token> tokens) {
+    expect(tokens, Type.DOUBLE_QUOTE);
+    String all = concateTill(tokens, Type.DOUBLE_QUOTE);
+    expect(tokens, Type.DOUBLE_QUOTE);
+    return all;
+  }
+
+  protected Json() {
+  }
+
+  public static class JsonObject implements Iterable<String> {
+    private Map<String, Object> wrap;
+
+    public JsonObject(Map<String, Object> toWrap) {
+      this.wrap = toWrap;
+    }
+
+    public JsonObject getObject(String key) {
+      return new JsonObject((Map<String, Object>) wrap.get(key));
+    }
+
+    public JsonObject putObject(String key, JsonObject obj) {
+      wrap.put(key, obj.wrap);
+      return this;
+    }
+
+    public boolean getBoolean(String key) {
+      return Boolean.parseBoolean(wrap.get(key).toString());
+    }
+
+    public JsonObject putBoolean(String key, boolean value) {
+      wrap.put(key, value);
+      return this;
+    }
+
+    public int getInt(String key) {
+      return Integer.parseInt(wrap.get(key).toString());
+    }
+
+    public JsonObject putInt(String key, int val) {
+      wrap.put(key, val);
+      return this;
+    }
+
+    public double getDouble(String key) {
+      return Double.parseDouble(wrap.get(key).toString());
+    }
+
+    public JsonObject putDouble(String key, double value) {
+      wrap.put(key, value);
+      return this;
+    }
+
+    public String getString(String key) {
+      return wrap.get(key).toString();
+    }
+
+    public JsonObject putString(String key, String value) {
+      wrap.put(key, value);
+      return this;
+    }
+
+    public boolean hasKey(String key) {
+      return wrap.containsKey(key);
+    }
+
+    public String toJson() {
+      return Json.toJson(wrap);
+    }
+
+    @Override
+    public Iterator<String> iterator() {
+      return wrap.keySet().iterator();
+    }
+
+    public String[] getStringArray(String key) {
+      LinkedList<String> strs = (LinkedList<String>)wrap.get(key);
+      return strs.toArray(new String[strs.size()]);
+    }
+  }
+
+}

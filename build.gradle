@@ -1,0 +1,26 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+mainClassName='com.pixel.painter.ui.PixelPainter'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+  testCompile 'org.mockito:mockito-all:1.8.4' 
+  testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+jar {
+  baseName = "pixel-painter"
+  version = '0.0.1'
+  manifest {
+    attributes 'Main-Class': mainClassName
+  }
+}
+	

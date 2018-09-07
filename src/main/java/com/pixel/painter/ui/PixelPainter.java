@@ -748,11 +748,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
               }
             } else {
               File toSave = jfc.getSelectedFile();
-              saveFileChooserSettings(jfc, FILE_CHOOSER.SAVE_IMAGE);
               painter.getController().save(toSave);
               saved = true;
             }
             if (saved) {
+              saveFileChooserSettings(jfc, FILE_CHOOSER.SAVE_IMAGE);
               frame2.setTitle(String.format("%s - %s", file.getName(), file.getParentFile().getAbsolutePath()));
             }
           } catch (IOException e1) {

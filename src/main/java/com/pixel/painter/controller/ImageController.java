@@ -249,11 +249,6 @@ public class ImageController {
     return colorPoints.get(new Color(red, green, blue, alpha));
   }
 
-  public Point getPointInWindow(Point p) {
-
-    return null;
-  }
-
   public void setAllColorsAt(int x, int y, Color newColor) {
     Color originalColor = this.sample(x, y);
     Set<Point> pts = colorPoints.get(originalColor);

@@ -89,6 +89,7 @@ import com.pixel.painter.ui.dialog.NewFilePanel;
 import com.pixel.painter.ui.dialog.NewImagePanel;
 import com.pixel.painter.ui.overlays.ColorBarOverlay;
 import com.pixel.painter.ui.overlays.ColorHoverOverlay;
+import com.pixel.painter.ui.overlays.LayerOverlay;
 import com.pixel.painter.ui.overlays.Overlay;
 import com.pixel.painter.ui.overlays.SpriteFrameBarOverlay;
 
@@ -688,6 +689,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     overlays.add(new ColorBarOverlay(tools, ctrl, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, ctrl, sprites));
     overlays.add(new ColorHoverOverlay(tools, pp, ctrl));
+    overlays.add(new LayerOverlay(tools, pp, ctrl));
   }
 
   public static void onExit(int closeOp) {

@@ -16,11 +16,10 @@ public class TilesetController {
 		this.tileHeight = th;
 		this.rows = image.getHeight() / th;
 		this.cols = image.getWidth() / tw;
-
 	}
 
 	public ImageController getController(int col, int row) {
-		return new ImageController(image.getSubimage(col * tileWidth, row
+		return new SingleImageController(image.getSubimage(col * tileWidth, row
 				* tileHeight, tileWidth, tileHeight), true);
 	}
 

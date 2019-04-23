@@ -19,7 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.controller.SingleImageController;
 
 public class SpriteSheetPanel extends JPanel {
 
@@ -159,7 +159,7 @@ public class SpriteSheetPanel extends JPanel {
 	public static void main(String... args) {
 		JFrame frame = new JFrame();
 		PixelPainter painter = new PixelPainter(
-				ImageController.createNewInstance(8,8), null);
+				SingleImageController.createNewInstance(8,8), null);
 		frame.setSize(100, 100);
 		frame.setLocationRelativeTo(null);
 

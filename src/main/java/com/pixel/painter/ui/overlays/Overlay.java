@@ -66,9 +66,7 @@ public class Overlay {
     if(highlight) {
       tmpG.setColor(Color.LIGHT_GRAY.brighter());
     }
-    float strWidth  = tmpG.getFontMetrics().stringWidth(plus);
-    float strHeight = tmpG.getFontMetrics().getHeight();
-    tmpG.drawString(plus, (float) (rect.getX() + strWidth / 2), (float) (rect.getMaxY() - strHeight / 2));
+    tmpG.drawString(plus, (float) (rect.getX()), (float) (rect.getMaxY() - rect.height / 2));
     tmpG.dispose();
   }
 

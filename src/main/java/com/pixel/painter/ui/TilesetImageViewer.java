@@ -27,7 +27,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.TransferHandler;
 
-import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.controller.SingleImageController;
 import com.pixel.painter.controller.TilesetController;
 
 public class TilesetImageViewer extends JPanel {
@@ -208,7 +208,7 @@ public class TilesetImageViewer extends JPanel {
 	}
 
 	protected void editTile() {
-		PixelPainter painter = new PixelPainter(new ImageController(
+		PixelPainter painter = new PixelPainter(new SingleImageController(
 				currentImage.getSubimage(tileRect.x, tileRect.y,
 						tileRect.width, tileRect.height), true), null);
 		PixelPainter.createAndDisplay(painter, JFrame.DISPOSE_ON_CLOSE);

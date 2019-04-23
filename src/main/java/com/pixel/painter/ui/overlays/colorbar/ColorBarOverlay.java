@@ -28,8 +28,8 @@ import com.pixel.painter.ui.overlays.Overlay;
 
 public class ColorBarOverlay extends Overlay {
 
-  private static final int              FROM_RIGHT_SIDE   = 11;
-  private static final int              OVERLAY_WIDTH     = 34;
+  private static final int              FROM_RIGHT_SIDE   = 3;
+  private static final int              OVERLAY_WIDTH     = 38;
   private static final int              BUTTON_SEPARATION = 2;
   private Color                         highlightedColor;
   private Color                         selected;
@@ -172,13 +172,14 @@ public class ColorBarOverlay extends Overlay {
 
     int bW          = getButtonWidth();
     int y           = 0;
-    int slideBorder = 4;
+    int barBorder   = 3;
+    int slideBorder = 8;
     int numVariants = 10;
     int slideWidth  = numVariants * (getButtonWidth() + BUTTON_SEPARATION);
 
     g.setColor(background);
     g.translate(getX(), getY());
-    g.fillRoundRect(-slideBorder / 2, -5, getWidth(), getHeight(), 10, 10);
+    g.fillRoundRect(-barBorder, -barBorder, getWidth(), getHeight(), 10, 10);
 
     for (Color c : colors) {
       boolean highlight = (new Rectangle(getX(), y + getY(), bW, bW)).contains(new Point(mouseX, mouseY));
@@ -194,7 +195,7 @@ public class ColorBarOverlay extends Overlay {
       // draw horizontal selection
       if(highlight) {
         g.setColor(SLIDEMENU_BACKGROUND);
-        g.fillRoundRect(-slideWidth, y + slideBorder / 2, slideWidth + bW + slideBorder / 2, bW + slideBorder, 10, 10);
+        g.fillRoundRect(-slideWidth - slideBorder/2, y - slideBorder/2, slideWidth + bW + slideBorder / 2, bW + slideBorder, 10, 10);
 
         // draw the actual color buttons
         List<ColorButton> buttons = this.selectedVariants.get(c);
@@ -221,7 +222,7 @@ public class ColorBarOverlay extends Overlay {
       y += 35;
     }
 
-    drawTrashButton(g, new Rectangle2D.Double(width - OVERLAY_WIDTH, y, bW, bW));
+    drawTrashButton(g, new Rectangle2D.Double(0, y, bW, bW));
 
     g.dispose();
   }
@@ -234,58 +235,6 @@ public class ColorBarOverlay extends Overlay {
     g.setColor(Color.white);
     g.drawString(trash, (float) (double1.getX() + double1.getWidth() / 2 - strWidth / 2), (float) (double1.getMaxY()));
   }
-
-  // private void drawColorVariants(Graphics2D graphics, int x, int y, Color c,
-  // int numVariants) {
-  //
-  // float[] hsb = new float[3];
-  // Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), hsb);
-  // float hue = hsb[0];
-  // float sat = hsb[1];
-  // float bri = hsb[2];
-  // int sep = 2;
-  // x += 3;
-  //
-  // Graphics2D g2d = (Graphics2D) graphics.create();
-  // int max = numVariants;
-  // float percent = 1.0f;
-  // Color color = null;
-  // Color validColor = null;
-  //
-  // for (int i = 0; i < max; ++i) {
-  // percent -= 0.10f;
-  // float p = 1.0f - percent;
-  //
-  // color = Color.getHSBColor(hue, sat, bri * p);
-  //
-  // g2d.setColor(color);
-  // g2d.fillRect(x, y, 25, 25);
-  //
-  // // highlight variant
-  // if((new Rectangle(x, y, 25, 25)).contains(new Point(mouseX, mouseY))) {
-  // g2d.setColor(Color.white);
-  // g2d.drawRect(x, y, 25, 25);
-  //
-  // drawRGBHint(g2d, x, y, color);
-  // validColor = color;
-  // }
-  //
-  // x += 25 + sep;
-  // }
-  //
-  // selected = validColor;
-  // if(selected == null) {
-  // performMouseOp = false;
-  // } else {
-  // // perform mouse op
-  // if(performMouseOp) {
-  // addSelectedBrush();
-  // performMouseOp = false;
-  // }
-  // }
-  //
-  // g2d.dispose();
-  // }
 
   protected void setSelectedColor(Color color) {
     this.selected = color;

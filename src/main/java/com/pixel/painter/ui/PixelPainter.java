@@ -83,6 +83,7 @@ import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.brushes.EraseBrush;
 import com.pixel.painter.brushes.FillMode;
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.controller.SingleImageController;
 import com.pixel.painter.controller.SpriteController;
 import com.pixel.painter.model.ApplicationSettings;
 import com.pixel.painter.model.ColorPalette;
@@ -635,7 +636,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 			@Override
 			public void run() {
 				createAndDisplay(
-						new PixelPainter(ImageController.createNewInstance(imageSize.width, imageSize.height), null),
+						new PixelPainter(SingleImageController.createNewInstance(imageSize.width, imageSize.height), null),
 						JFrame.EXIT_ON_CLOSE);
 			}
 		});
@@ -1128,7 +1129,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
 	protected void openNewFile(File file) {
 		try {
-			ImageController newCtrl = ImageController.createNewInstance(file);
+			ImageController newCtrl = SingleImageController.createNewInstance(file);
 			this.changeImageController(newCtrl, file);
 			controllers.put(file, newCtrl);
 
@@ -1283,4 +1284,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
 		return null;
 	}
+
+  public File getCurrentFile() {
+    return file;
+  }
+
+  public ImageController getImageController() {
+    return this.ctrl;
+  }
 }

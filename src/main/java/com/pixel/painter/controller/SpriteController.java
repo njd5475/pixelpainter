@@ -46,7 +46,7 @@ public class SpriteController {
 		if (index != this.index && images.containsKey(index)) {
 			this.index = index;
 			painter.changeImageController(
-					ImageController.createNewInstance(images.get(index)), null);
+					SingleImageController.createNewInstance(images.get(index)), null);
 			// set the last image as the background sketch images
 			if (index - 1 > 0 && images.containsKey(index - 1)) {
 				painter.setBackgroundImage(images.get(index - 1));

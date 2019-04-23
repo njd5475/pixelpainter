@@ -20,7 +20,7 @@ public class ColorBrush extends Brush {
 	private final Color										color;
 	private Color													oldColor;
 
-	public ColorBrush(ImageController ctrl, Color color) {
+	private ColorBrush(ImageController ctrl, Color color) {
 		super(ctrl, null, getColorBrushIcon(color));
 		this.color = color;
 	}

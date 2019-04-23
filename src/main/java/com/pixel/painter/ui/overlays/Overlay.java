@@ -19,22 +19,21 @@ public class Overlay {
   private static final int     menuAlpha            = 225;
   protected static final Color SLIDEMENU_BACKGROUND = new Color(50, 50, 50, menuAlpha);
   private final JToolBar       toolbar;
-
   protected final Color        background;
   protected int                mouseX;
   protected int                mouseY;
-
   protected boolean            performMouseOp;
   protected ImageController    ctrl;
-
   protected int                width;
   private int                  height;
+  protected int                screenWidth;
+  protected int                screenHeight;
 
   public Overlay(JToolBar toolbar, ImageController ctrl) {
     background = new Color(0, 0, 0, 100);
 
     this.toolbar = toolbar;
-    this.ctrl = ctrl;
+    this.ctrl    = ctrl;
   }
 
   protected final JToolBar getToolBar() {
@@ -47,8 +46,10 @@ public class Overlay {
 
   public void render(Graphics2D init, int width, int height) {
     // save off the width and height for other functions
-    this.width = width;
-    this.height = height;
+    this.width        = width;
+    this.height       = height;
+    this.screenHeight = height;
+    this.screenWidth  = width;
 
     Graphics2D g = (Graphics2D) init.create();
 
@@ -60,13 +61,12 @@ public class Overlay {
     boolean highlight = rect.contains(new Point2D.Double(mouseX, mouseY));
     g.setColor(Color.lightGray);
     Graphics2D tmpG = (Graphics2D) g.create();
-    String plus = "\uf0fe";
+    String     plus = "\uf0fe";
     tmpG.setFont(PixelPainter.getFontAwesome());
-    if (highlight) {
+    if(highlight) {
       tmpG.setColor(Color.LIGHT_GRAY.brighter());
-      ;
     }
-    float strWidth = tmpG.getFontMetrics().stringWidth(plus);
+    float strWidth  = tmpG.getFontMetrics().stringWidth(plus);
     float strHeight = tmpG.getFontMetrics().getHeight();
     tmpG.drawString(plus, (float) (rect.getX() + strWidth / 2), (float) (rect.getMaxY() - strHeight / 2));
     tmpG.dispose();
@@ -104,5 +104,21 @@ public class Overlay {
   public boolean isInside(Point point) {
 
     return false;
+  }
+
+  public int getScreenWidth() {
+    return screenWidth;
+  }
+
+  public int getScreenHeight() {
+    return screenHeight;
+  }
+
+  public int getWidth() {
+    return width;
+  }
+
+  public int getHeight() {
+    return height;
   }
 }

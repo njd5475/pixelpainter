@@ -1,11 +1,8 @@
 Backlog:
 
 UI & GUI
-[ ] Save dialog does not start at the location of the opened file.
-[ ] Fix issue with color overlay performing draw operations when over a pixel
 [ ] Right-Click wheel menu
 [ ] Controlling multiple overlays
-[ ] Separation of overlay code and responsibilities
 [ ] Activate and deactivate overlay
 [ ] Event capturing in overlays
 
@@ -39,10 +36,8 @@ Frames & Animation
 [ ] Keeping the Color option when scrolling frames would be nice.
 
 Settings & Menus
-[ ] Save as multiple file types
 [ ] Option to change Grid color.
 [ ] Option to Export as a range of images in a custom folder location.
-[ ] Application Settings and temporary folder
 
 Pixel Manipulations
 [ ] Select all similar colors in the entire image
@@ -56,7 +51,8 @@ Pixel Manipulations
 [ ] Change shade of all similar colored pixels in image
 
 TODOs:
-[ ] Save last opened folder to temp storage
+[ ] Layers
+[ ] Save list of last opened folders to settings
 [ ] Add recently saved menu option list
 [ ] Show palate of colors currently in the image
 [ ] Add keyboard shortcuts for controls
@@ -64,8 +60,21 @@ TODOs:
 [ ] Update Map Preview update with changes to image automatically
 [ ] Open images from command line args on start
 [ ] Undo Ctrl-Z option
-[ ] Layers
+[ ] Copy and paste
+[ ] Add pixels to layer
 [ ] Draw other animation frames below current frame.
+
+2019-04-23
+[X] Keep duplicates from being added to color menu
+[X] Separation of overlay code and responsibilities
+[X] Fix issue with color overlay performing draw operations when over a pixel
+
+2019-04-22
+[X] Save dialog does not start at the location of the opened file.
+
+2019-04-21
+[X] Application Settings and temporary folder
+[X] Save as multiple file types
 
 2017-08-13
 [X] Remove Popup for size when app starts
@@ -79,7 +88,7 @@ TODOs:
 [X] Less lag when bringing up the file browser (Save, Add Sketch Image, etc.)
 
 2011-04-06
-[ ] Pallette Editor
+[X] Pallette Editor
 
 2011-04-05
 [X] Add drag'n'drop file loading 

@@ -54,7 +54,14 @@ public class LayerOverlay extends Overlay {
     boolean                        highlight   = false;
     for (Integer layer = 1; layer <= layerCtrl.getLayerCount(); ++layer) {
       highlight = layerBounds.get(layer).contains(new Point(mouseX, mouseY));
+      if(layerCtrl.getCurrentLayer() == layer) {
+        g.setColor(Color.blue);
+        g.fillRect(curX, getY(), g.getFontMetrics().stringWidth(layer.toString()) + LAYER_LABEL_SEPARATION, g.getFontMetrics().getHeight());
+      }
       g.setColor(Color.white);
+      if(layerCtrl.isVisible(layer)) {
+        g.setColor(Color.yellow);
+      }
       if(highlight) {
         g.setColor(Color.pink);
       }
@@ -114,13 +121,29 @@ public class LayerOverlay extends Overlay {
       for (Map.Entry<Integer, Rectangle.Double> layerButton : entries) {
         if(layerButton.getValue().contains(e.getPoint())) {
           System.out.println("Changing to layer " + layerButton.getKey());
+          
           ImageController ctrl = viewer.getImageController();
           if(ctrl != layerCtrl) {
             layerCtrl.addLayer(ctrl);
             viewer.changeImageController(layerCtrl, viewer.getCurrentFile());
           }
+          if(ctrl instanceof LayeredController) {
+            LayeredController lctrl = (LayeredController) ctrl;
+            lctrl.changeLayer(layerButton.getKey());
+          }
           e.consume();
         }
+      }
+    }
+  }
+  
+  @Override
+  public void mousePressed(MouseEvent e) {
+    super.mousePressed(e);
+    Set<Map.Entry<Integer, Rectangle.Double>> entries = getLayerButtonBounds().entrySet();
+    for (Map.Entry<Integer, Rectangle.Double> layerButton : entries) {
+      if(layerButton.getValue().contains(e.getPoint())) {
+        e.consume();
       }
     }
   }

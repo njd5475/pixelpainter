@@ -2,10 +2,12 @@ package com.pixel.painter.controller;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
@@ -14,6 +16,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import javax.imageio.ImageIO;
 import javax.swing.undo.UndoManager;
 
 import com.pixel.painter.brushes.Brush;
@@ -23,26 +26,28 @@ import com.pixel.painter.ui.ModifyListener;
 
 public class LayeredController implements ImageController {
 
-  private SortedMap<Integer, ImageController> layers = new TreeMap<>();
-  private int                                 width  = 0;
-  private int                                 height = 0;
+  private SortedMap<Integer, ImageController> layers          = new TreeMap<>();
+  private Set<Integer>                        invisibleLayers = new HashSet<Integer>();
+  private int                                 width           = 0;
+  private int                                 height          = 0;
   private Brush                               currentBrush;
   private ImageController                     currentCtrl;
   private Color                               fillColor;
   private Set<ModifyListener>                 listeners;
   private ModifyListener                      oneListener;
+  private Integer currentIndex;
 
   public LayeredController() {
-    listeners = new HashSet<>();
+    listeners   = new HashSet<>();
     oneListener = new ModifyListener() {
-      
-      @Override
-      public void modified(ImageController imgCtrl) {
-        for(ModifyListener l : listeners) {
-          l.modified(imgCtrl);
-        }
-      }
-    };
+
+                  @Override
+                  public void modified(ImageController imgCtrl) {
+                    for (ModifyListener l : listeners) {
+                      l.modified(imgCtrl);
+                    }
+                  }
+                };
   }
 
   public void addLayer(ImageController ctrl) {
@@ -56,6 +61,14 @@ public class LayeredController implements ImageController {
     ctrl.addModifyListener(oneListener);
   }
 
+  public void toggleLayer(int layerIndex) {
+    if(this.invisibleLayers.contains(layerIndex)) {
+      this.invisibleLayers.remove(layerIndex);
+    } else {
+      this.invisibleLayers.add(layerIndex);
+    }
+  }
+
   public int getLayerCount() {
     return layers.size();
   }
@@ -63,13 +76,18 @@ public class LayeredController implements ImageController {
   public void changeLayer(int index) {
     ImageController ctrl = layers.get(index);
     if(ctrl != null) {
-      currentCtrl = ctrl;
-      if(currentBrush != null) {
-        currentCtrl.setBrush(currentBrush);
+      if(currentCtrl != ctrl) {
+        currentCtrl = ctrl;
+        if(currentBrush != null) {
+          currentCtrl.setBrush(currentBrush);
+        }
+        if(fillColor != null) {
+          currentCtrl.setFillColor(fillColor);
+        }
+      } else {
+        this.toggleLayer(index);
       }
-      if(fillColor != null) {
-        currentCtrl.setFillColor(fillColor);
-      }
+      this.currentIndex = index;
     }
   }
 
@@ -101,11 +119,17 @@ public class LayeredController implements ImageController {
     return ColorBrush.createColorBrush(this, color);
   }
 
+  public boolean isVisible(int layer) {
+    return !this.invisibleLayers.contains(layer);
+  }
+
   @Override
   public void render(Graphics2D g) {
     Set<Entry<Integer, ImageController>> entries = layers.entrySet();
     for (Entry<Integer, ImageController> entry : entries) {
-      entry.getValue().render(g);
+      if(isVisible(entry.getKey())) {
+        entry.getValue().render(g);
+      }
     }
   }
 
@@ -113,20 +137,29 @@ public class LayeredController implements ImageController {
   public void render(Graphics2D g, int width, int height) {
     Set<Entry<Integer, ImageController>> entries = layers.entrySet();
     for (Entry<Integer, ImageController> entry : entries) {
-      entry.getValue().render(g, width, height);
+      if(isVisible(entry.getKey())) {
+        entry.getValue().render(g, width, height);
+      }
     }
   }
 
   @Override
   public void save(File selectedFile) throws IOException {
-    // TODO Auto-generated method stub
-
+    this.save(selectedFile, "png");
   }
 
   @Override
   public void save(File selectedFile, String extension) throws IOException {
-    // TODO Auto-generated method stub
+    System.out.println("Saving with extensions " + extension);
+    ImageIO.write(getVisibleImage(), extension, selectedFile);
+  }
 
+  private RenderedImage getVisibleImage() {
+    BufferedImage bImg = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D    g    = bImg.createGraphics();
+    this.render(g);
+    g.dispose();
+    return bImg;
   }
 
   @Override
@@ -219,6 +252,10 @@ public class LayeredController implements ImageController {
   @Override
   public void endRecording() {
     this.currentCtrl.endRecording();
+  }
+
+  public Integer getCurrentLayer() {
+    return currentIndex;
   }
 
 }

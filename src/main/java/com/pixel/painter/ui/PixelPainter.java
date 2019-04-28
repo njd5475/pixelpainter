@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Event;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.FontMetrics;
@@ -19,6 +20,7 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.TexturePaint;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -68,6 +70,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.UIManager;
@@ -429,6 +432,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private void handleMouseEvent(MouseEvent e) {
+    if(e.getID() == MouseEvent.MOUSE_PRESSED) {
+      ctrl.startRecording();
+    }
     Dimension          d    = ctrl.getSize();
     Rectangle2D.Double rect = new Rectangle2D.Double(0, 0, d.width, d.height);
     // Shape shp = transform.createTransformedShape(rect);
@@ -446,6 +452,13 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       } else {
         ctrl.applyBrush(pt.x, pt.y);
         repaint();
+      }
+    }
+    if(e.getID() == MouseEvent.MOUSE_RELEASED) {
+      try {
+        ctrl.endRecording();
+      } catch (RuntimeException re) {
+
       }
     }
   }
@@ -677,9 +690,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private static void setupToolBar(final ImageController ctrl, SpriteController sprites, JFrame frame2,
       PixelPainter pp) {
     tools = new JToolBar();
-    Font        f            = getFontAwesome();
-    FontMetrics fm           = tools.getFontMetrics(f);
-    
+    Font        f  = getFontAwesome();
+    FontMetrics fm = tools.getFontMetrics(f);
+
     System.out.println("Font info: " + fm.getLeading() + " ");
     toolButtonSize = new Dimension(2 * fm.getMaxAdvance(),
         fm.getLeading() + fm.getMaxAscent() + fm.getHeight() + fm.getMaxDescent());
@@ -791,6 +804,24 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         }
       }
     });
+    JMenuItem undoLast = new JMenuItem("Undo");
+    undoLast.addActionListener(e -> {
+      painter.getController().getUndoManager().undo();
+      painter.repaint();
+      // ((JMenuItem)e.getSource()).setEnabled(painter.getController().getUndoManager().canUndo());
+    });
+    undoLast.setAccelerator(KeyStroke.getKeyStroke('Z', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+
+    JMenuItem redoLast = new JMenuItem("Redo");
+    redoLast.addActionListener(e -> {
+      painter.getController().getUndoManager().redo();
+      painter.repaint();
+      // ((JMenuItem)e.getSource()).setEnabled(painter.getController().getUndoManager().canRedo());
+    });
+    redoLast.setAccelerator(KeyStroke.getKeyStroke('V', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+
+    tools.add(redoLast);
+    tools.add(undoLast);
     tools.add(createSpriteSheet);
     tools.add(sketchImage);
 

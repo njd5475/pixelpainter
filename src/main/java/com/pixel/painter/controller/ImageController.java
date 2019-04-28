@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
+import javax.swing.undo.UndoManager;
+
 import com.pixel.painter.brushes.Brush;
 import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.ui.ModifyListener;
@@ -43,6 +45,10 @@ public interface ImageController {
   public void setColorAt(int x, int y, Color c);
 
   public void setColorAt(int x, int y);
+  
+  public void startRecording();
+  
+  public void endRecording();
 
   public Brush getBrush();
 
@@ -54,6 +60,8 @@ public interface ImageController {
   
   public void addModifyListener(ModifyListener l);
 
+  public UndoManager getUndoManager();
+  
   public BufferedImage getImage();
 
   public Set<Point> getAll(int red, int green, int blue, int alpha);

@@ -15,35 +15,33 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
-import javax.swing.undo.AbstractUndoableEdit;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
-import javax.swing.undo.UndoableEdit;
 
 import com.pixel.painter.brushes.Brush;
 import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.brushes.ColorBrush;
 import com.pixel.painter.brushes.EraseBrush;
+import com.pixel.painter.brushes.undoables.BrushUndoable;
 import com.pixel.painter.ui.ModifyListener;
 
 public class SingleImageController implements ImageController {
 
-  private final BufferedImage image;
-  private Brush brush;
-  private final UndoManager manager;
-  private final int pxArr[] = new int[4];
-  private Color fillColor;
+  private final BufferedImage      image;
+  private Brush                    brush;
+  private UndoManager              previousEdits;
+  private UndoManager              currentRecording;
+  private final int                pxArr[] = new int[4];
+  private Color                    fillColor;
   private Set<BrushChangeListener> brushListeners;
-  private Set<ModifyListener> modifyListeners;
-  private Map<Color, Set<Point>> colorPoints;
+  private Set<ModifyListener>      modifyListeners;
+  private Map<Color, Set<Point>>   colorPoints;
 
   protected SingleImageController(int width, int height) {
     this(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), true);
   }
 
   public SingleImageController(BufferedImage image, boolean modifyOriginal) {
-    if (!modifyOriginal) {
+    if(!modifyOriginal) {
       this.image = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
       Graphics2D g = this.image.createGraphics();
       g.drawImage(image, 0, 0, null);
@@ -53,17 +51,17 @@ public class SingleImageController implements ImageController {
     }
     colorPoints = new HashMap<Color, Set<Point>>();
     mapImageByColor();
-    brushListeners = new HashSet<BrushChangeListener>();
-    modifyListeners = new HashSet<ModifyListener>();
-    manager = new UndoManager();
+    brushListeners   = new HashSet<BrushChangeListener>();
+    modifyListeners  = new HashSet<ModifyListener>();
+    currentRecording = new UndoManager();
   }
 
   private void mapImageByColor() {
     for (int x = 0; x < image.getWidth(); ++x) {
       for (int y = 0; y < image.getHeight(); ++y) {
-        Color sample = this.sample(x, y);
+        Color      sample = this.sample(x, y);
         Set<Point> points = colorPoints.get(sample);
-        if (points == null) {
+        if(points == null) {
           points = new HashSet<Point>();
           colorPoints.put(sample, points);
         }
@@ -90,7 +88,7 @@ public class SingleImageController implements ImageController {
   }
 
   public void setBrush(Brush brush) {
-    if (brush == null) {
+    if(brush == null) {
       throw new NullPointerException("Brush setting is null");
     }
     Brush old = this.brush;
@@ -107,22 +105,25 @@ public class SingleImageController implements ImageController {
       l.brushChanged(old, update, this);
     }
   }
-  
+
   private void notifyModifyListeners(ImageController ctrl) {
-    for(ModifyListener l : this.modifyListeners) {
+    for (ModifyListener l : this.modifyListeners) {
       l.modified(ctrl);
     }
   }
 
   public void applyBrush(int x, int y) {
-    if (brush == null) {
+    if(brush == null) {
       return;
     }
-    brush.apply(this, x, y, manager);
+    BrushUndoable apply = brush.apply(this, x, y);
+    if(apply != null) {
+      currentRecording.addEdit(apply);
+    }
   }
 
   public int[] samplePixels(Rectangle r) {
-    int[] data = new int[r.width * r.height * 4];
+    int[]          data   = new int[r.width * r.height * 4];
     WritableRaster raster = image.getRaster();
     raster.getPixels(r.x, r.y, r.width, r.height, data);
     return data;
@@ -143,7 +144,7 @@ public class SingleImageController implements ImageController {
   public void save(File selectedFile) throws IOException {
     this.save(selectedFile, "PNG");
   }
-  
+
   public void save(File selectedFile, String extension) throws IOException {
     System.out.println("Saving with extensions " + extension);
     ImageIO.write(image, extension, selectedFile);
@@ -162,9 +163,9 @@ public class SingleImageController implements ImageController {
   public void setColorAt(int x, int y, Color c) {
     // move color in map
     Color sample = sample(x, y);
-    if (colorPoints.containsKey(sample)) {
+    if(colorPoints.containsKey(sample)) {
       colorPoints.get(sample).remove(new Point(x, y));
-      if (colorPoints.get(sample).isEmpty()) {
+      if(colorPoints.get(sample).isEmpty()) {
         colorPoints.remove(sample);
       }
     }
@@ -172,7 +173,7 @@ public class SingleImageController implements ImageController {
     // resample
     sample = sample(x, y);
     Set<Point> points = colorPoints.get(sample);
-    if (points == null) {
+    if(points == null) {
       points = new HashSet<Point>();
       colorPoints.put(sample, points);
     }
@@ -182,7 +183,7 @@ public class SingleImageController implements ImageController {
 
   public void setColorAt(int x, int y) {
     Color c = sample(x, y);
-    if (c.getAlpha() == 0) {
+    if(c.getAlpha() == 0) {
       this.setBrush(new EraseBrush());
     } else {
       // find brush with color and change to that brush
@@ -217,8 +218,8 @@ public class SingleImageController implements ImageController {
   }
 
   public void setAllColorsAt(int x, int y, Color newColor) {
-    Color originalColor = this.sample(x, y);
-    Set<Point> pts = colorPoints.get(originalColor);
+    Color      originalColor = this.sample(x, y);
+    Set<Point> pts           = colorPoints.get(originalColor);
     colorPoints.remove(originalColor);
     colorPoints.put(newColor, pts);
     for (Point pt : pts) {
@@ -233,6 +234,32 @@ public class SingleImageController implements ImageController {
   @Override
   public void addModifyListener(ModifyListener l) {
     this.modifyListeners.add(l);
+  }
+
+  @Override
+  public UndoManager getUndoManager() {
+    return currentRecording;
+  }
+
+  @Override
+  public void startRecording() {
+    if(this.previousEdits == null) {
+      this.previousEdits = this.currentRecording;
+      this.currentRecording = new UndoManager();
+    }
+  }
+
+  @Override
+  public void endRecording() {
+    if(this.previousEdits == null) {
+      throw new RuntimeException("Never started recording");
+    }
+    if(this.previousEdits != this.currentRecording) {
+      this.currentRecording.end();
+      this.previousEdits.addEdit(this.currentRecording);
+    }
+    this.currentRecording = this.previousEdits;
+    this.previousEdits = null;
   }
 
 }

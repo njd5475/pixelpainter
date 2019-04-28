@@ -4,17 +4,16 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
-import javax.swing.undo.UndoManager;
 
+import com.pixel.painter.brushes.undoables.BrushUndoable;
+import com.pixel.painter.brushes.undoables.SinglePixelEdit;
 import com.pixel.painter.controller.ImageController;
 
 public class ColorBrush extends Brush {
@@ -77,20 +76,19 @@ public class ColorBrush extends Brush {
 	}
 
 	@Override
-	public void apply(ImageController ctrl, int x, int y, UndoManager undolog) {
+	public BrushUndoable apply(ImageController ctrl, int x, int y) {
 	  Graphics2D g = ctrl.getImage().createGraphics();
 		oldColor = ctrl.sample(x, y);
 		g.setColor(color);
 		ctrl.setColorAt(x, y, color);
 		// g.drawOval(x - 1, y - 1, 1, 1);
 		g.dispose();
+		if(!oldColor.equals(color)) {
+		  return new SinglePixelEdit(ctrl, oldColor, color, x, y);
+		}
+		return null;
 	}
-
-	@Override
-	public Rectangle getAffectedArea(int x, int y) {
-		return new Rectangle(x, y, 1, 1);
-	}
-
+	
 	public Color getColor() {
 		return color;
 	}

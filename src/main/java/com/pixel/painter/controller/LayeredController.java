@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import javax.swing.undo.UndoManager;
+
 import com.pixel.painter.brushes.Brush;
 import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.brushes.ColorBrush;
@@ -202,6 +204,21 @@ public class LayeredController implements ImageController {
   @Override
   public int[] samplePixels(Rectangle r) {
     return null;
+  }
+
+  @Override
+  public UndoManager getUndoManager() {
+    return this.currentCtrl.getUndoManager();
+  }
+
+  @Override
+  public void startRecording() {
+    this.currentCtrl.startRecording();
+  }
+
+  @Override
+  public void endRecording() {
+    this.currentCtrl.endRecording();
   }
 
 }

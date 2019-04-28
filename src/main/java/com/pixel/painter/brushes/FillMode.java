@@ -4,31 +4,31 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
 import javax.swing.Action;
-import javax.swing.undo.UndoManager;
 
+import com.pixel.painter.brushes.undoables.BrushUndoable;
+import com.pixel.painter.brushes.undoables.FillModeBrushUndoable;
 import com.pixel.painter.controller.ImageController;
 
 public class FillMode extends Brush {
 
-  private String    unicodeIcon;
+  private String unicodeIcon;
 
   public FillMode() {
     super("FillMode");
     this.unicodeIcon = "\uf576";
   }
-  
+
   public Action createAsAction(ImageController ctrl) {
     return new BrushAction(unicodeIcon, getIcon(), ctrl, this);
   }
 
   @Override
-  public void apply(ImageController ctrl, int x, int y, UndoManager undolog) {
+  public BrushUndoable apply(ImageController ctrl, int x, int y) {
     Graphics2D        g = ctrl.getImage().createGraphics();
     LinkedList<Point> q = new LinkedList<Point>();
 
@@ -41,7 +41,6 @@ public class FillMode extends Brush {
     Color      target        = ctrl.sample(x, y);
     Set<Point> alreadyFilled = new HashSet<Point>();
 
-    Rectangle affectedArea = new Rectangle(x, y, 1, 1);
     q.add(new Point(x, y));
     g.setColor(color);
     while (!q.isEmpty()) {
@@ -75,22 +74,21 @@ public class FillMode extends Brush {
             ctrl.setColorAt(i, n.y, color);
             Point filledPoint = new Point(i, n.y);
             alreadyFilled.add(filledPoint);
-            affectedArea.add(filledPoint);
           } else {
             // Refilling position
-            return;
+            return null;
           }
         }
       } else {
         // Pixels aren't getting changed!
       }
     }
+    return buildUndoable(ctrl, target, color, x, y, alreadyFilled);
   }
 
-  @Override
-  public Rectangle getAffectedArea(int x, int y) {
-    // TODO Auto-generated method stub
-    return null;
+  private BrushUndoable buildUndoable(ImageController ctrl, Color starting, Color ending, int x, int y,
+      Set<Point> changed) {
+    return new FillModeBrushUndoable(ctrl, starting, ending, x, y, changed);
   }
 
 }

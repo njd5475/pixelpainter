@@ -51,7 +51,6 @@ Pixel Manipulations
 [ ] Ability to nudge 1px using the arrow keys.
 
 TODOs:
-[ ] Undo Ctrl-Z option
 [ ] Copy current color and brush to new animation frame when switching
 [ ] Add saving to layer controller
 [ ] Add a selected layer to work on
@@ -63,6 +62,9 @@ TODOs:
 [ ] Copy and paste
 [ ] Add pixels to layer
 [ ] Draw other animation frames below current frame.
+
+2019-04-28
+[X] Undo Ctrl-Z option
 
 2019-04-27
 [X] New frame should copy existing

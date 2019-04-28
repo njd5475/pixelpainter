@@ -52,8 +52,6 @@ Pixel Manipulations
 
 TODOs:
 [ ] Copy current color and brush to new animation frame when switching
-[ ] Add saving to layer controller
-[ ] Add a selected layer to work on
 [ ] Save list of last opened folders to settings
 [ ] Add recently saved menu option list
 [ ] Show palate of colors currently in the image
@@ -65,6 +63,8 @@ TODOs:
 
 2019-04-28
 [X] Undo Ctrl-Z option
+[X] Add saving to layer controller
+[X] Add a selected layer to work on
 
 2019-04-27
 [X] New frame should copy existing

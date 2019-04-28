@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -196,6 +197,11 @@ public class LayeredController implements ImageController {
   @Override
   public void addModifyListener(ModifyListener l) {
     listeners.add(l);
+  }
+
+  @Override
+  public int[] samplePixels(Rectangle r) {
+    return null;
   }
 
 }

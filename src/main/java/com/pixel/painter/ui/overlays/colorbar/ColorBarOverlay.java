@@ -11,6 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.Rectangle2D.Double;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JToolBar;
 
 import com.pixel.painter.brushes.Brush;
+import com.pixel.painter.brushes.Brush.BrushAction;
 import com.pixel.painter.controller.ImageController;
 import com.pixel.painter.model.ColorPalette;
 import com.pixel.painter.ui.PixelPainter;
@@ -136,18 +138,18 @@ public class ColorBarOverlay extends Overlay {
   public void addSelectedBrush(Color color) {
     Brush    brush   = ctrl.createColorBrush(color);
     JToolBar toolbar = getToolBar();
-    boolean  isDup   = false;
+    Set<Brush> brushes = new HashSet<Brush>();
     for (Component c : toolbar.getComponents()) {
       if(c instanceof JButton) {
         JButton but = (JButton) c;
-        if(but.getAction() instanceof Brush) {
-          Brush b = (Brush) but.getAction();
-          isDup = (b == brush);
+        if(but.getAction() instanceof BrushAction) {
+          BrushAction b = (BrushAction) but.getAction();
+          brushes.add(b.getBrush());
         }
       }
     }
-    if(!isDup) {
-      JButton but = toolbar.add(brush);
+    if(!brushes.contains(brush)) {
+      JButton but = toolbar.add(brush.createAsAction(ctrl));
       but.setPreferredSize(PixelPainter.toolButtonSize);
     }
     toolbar.invalidate();

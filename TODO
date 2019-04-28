@@ -1,10 +1,5 @@
 Backlog:
 
-UI & GUI
-[ ] Controlling multiple overlays
-[ ] Activate and deactivate overlay
-[ ] Right-Click wheel menu
-
 New Features
 [ ] 2D skeletal animation
 [ ] Checkpoint save to save the image in it's current state
@@ -15,6 +10,11 @@ New Features
 [ ] Particle effects generator
 [ ] Scrolling threw images in one window
 [ ] Textured fill, noise fill
+
+UI & GUI
+[ ] Controlling multiple overlays
+[ ] Activate and deactivate overlay
+[ ] Right-Click wheel menu
 
 Colors & Palettes
 [ ] Update overlay when palette changes
@@ -31,26 +31,27 @@ Tilesets
 [ ] Tile drag and drop, drag and drop tiles to different locations
 
 Frames & Animation
+[ ] Keeping the Color and brush when changing frames.
 [ ] An option to delete frames.
 [ ] An option to reorder frames (drag frame and drop it somewhere else)
-[ ] Keeping the Color option when scrolling frames would be nice.
 
 Settings & Menus
 [ ] Option to change Grid color.
 [ ] Option to Export as a range of images in a custom folder location.
 
 Pixel Manipulations
-[ ] Select all similar colors in the entire image
-[ ] Right-Click pixel manipulation tool
-[ ] Ability to nudge 1px using the arrow keys.
-[ ] Copy and drag pixels around
-[ ] Drag Pixels
 [ ] Select Pixels
+[ ] Drag Pixels
 [ ] Select area
+[ ] Select all similar colors in the entire image
+[ ] Copy and drag pixels around
 [ ] Manipulated selected pixels
 [ ] Change shade of all similar colored pixels in image
+[ ] Right-Click pixel manipulation tool
+[ ] Ability to nudge 1px using the arrow keys.
 
 TODOs:
+[ ] Undo Ctrl-Z option
 [ ] Copy current color and brush to new animation frame when switching
 [ ] Add saving to layer controller
 [ ] Add a selected layer to work on
@@ -59,7 +60,6 @@ TODOs:
 [ ] Show palate of colors currently in the image
 [ ] Add keyboard shortcuts for controls
 [ ] Debug similar color highlighting
-[ ] Undo Ctrl-Z option
 [ ] Copy and paste
 [ ] Add pixels to layer
 [ ] Draw other animation frames below current frame.
@@ -83,6 +83,8 @@ TODOs:
 [X] Application Settings and temporary folder
 [X] Save as multiple file types
 [X] Named Color Palettes
+
+## Release v0.1.0
 
 2017-08-13
 [X] Remove Popup for size when app starts

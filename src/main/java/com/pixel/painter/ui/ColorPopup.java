@@ -20,82 +20,74 @@ import com.pixel.painter.controller.ImageController;
 
 public class ColorPopup extends AbstractAction {
 
-	private final JColorChooser		colors;
+  private final JColorChooser   colors;
+  private final ImageController ctrl;
+  private final JToolBar        toolbar;
+  private final JButton         addBrush;
+  private final JButton         close;
+  private Popup                 popup;
+  private JButton               button;
 
-	private Popup					popup;
+  public ColorPopup(JToolBar toolBar, ImageController ctrl) {
+    super("Color");
+    this.toolbar = toolBar;
+    addBrush     = new JButton("Add");
+    close        = new JButton("Close");
+    colors       = new JColorChooser();
+    this.ctrl    = ctrl;
+    addBrush.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        Brush brush = ColorPopup.this.ctrl.createColorBrush(colors.getColor());
+        toolbar.add(brush.createAsAction(ColorPopup.this.ctrl));
+        ColorPopup.this.ctrl.setBrush(brush);
+      }
+    });
+    close.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        popup.hide();
+        button.setEnabled(true);
+      }
+    });
+  }
 
-	private final ImageController	ctrl;
+  @Override
+  public void actionPerformed(ActionEvent e) {
+    JButton but = (JButton) e.getSource();
+    this.button = but;
+    but.setEnabled(false);
+    JToolBar toolBar    = (JToolBar) but.getParent();
+    Point    pt         = but.getLocation();
+    Point    ct         = but.getLocationOnScreen();
+    JPanel   selectPane = new JPanel();
+    selectPane.setLayout(new GridBagLayout());
+    GridBagConstraints c = new GridBagConstraints();
+    c.anchor    = GridBagConstraints.LINE_START;
+    c.fill      = GridBagConstraints.BOTH;
+    c.gridwidth = GridBagConstraints.REMAINDER;
+    c.weightx   = 1.0;
+    c.weighty   = 1.0;
+    c.gridy     = 0;
+    c.gridx     = 0;
+    selectPane.add(colors, c);
 
-	private final JToolBar			toolbar;
+    c.gridwidth = 1;
+    c.fill      = GridBagConstraints.NONE;
+    c.anchor    = GridBagConstraints.LINE_END;
+    c.weighty   = 0.0;
+    selectPane.add(new JPanel(), c);
 
-	private JButton					button;
+    c.insets  = new Insets(3, 5, 3, 5);
+    c.weightx = 0.0;
+    c.gridx++;
+    c.gridy++;
+    selectPane.add(addBrush, c);
+    c.gridx++;
+    selectPane.add(close, c);
 
-	private final JButton			addBrush;
-
-	private final JButton			close;
-
-	public ColorPopup(JToolBar toolBar, ImageController ctrl) {
-		super("Color");
-		this.toolbar = toolBar;
-		addBrush = new JButton("Add");
-		close = new JButton("Close");
-		colors = new JColorChooser();
-		this.ctrl = ctrl;
-		addBrush.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				Brush brush = ColorPopup.this.ctrl.createColorBrush(colors
-						.getColor());
-				toolbar.add(brush);
-				ColorPopup.this.ctrl.setBrush(brush);
-			}
-		});
-		close.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				popup.hide();
-				button.setEnabled(true);
-			}
-		});
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		JButton but = (JButton) e.getSource();
-		this.button = but;
-		but.setEnabled(false);
-		JToolBar toolBar = (JToolBar) but.getParent();
-		Point pt = but.getLocation();
-		Point ct = but.getLocationOnScreen();
-		JPanel selectPane = new JPanel();
-		selectPane.setLayout(new GridBagLayout());
-		GridBagConstraints c = new GridBagConstraints();
-		c.anchor = GridBagConstraints.LINE_START;
-		c.fill = GridBagConstraints.BOTH;
-		c.gridwidth = GridBagConstraints.REMAINDER;
-		c.weightx = 1.0;
-		c.weighty = 1.0;
-		c.gridy = 0;
-		c.gridx = 0;
-		selectPane.add(colors, c);
-
-		c.gridwidth = 1;
-		c.fill = GridBagConstraints.NONE;
-		c.anchor = GridBagConstraints.LINE_END;
-		c.weighty = 0.0;
-		selectPane.add(new JPanel(), c);
-
-		c.insets = new Insets(3, 5, 3, 5);
-		c.weightx = 0.0;
-		c.gridx++;
-		c.gridy++;
-		selectPane.add(addBrush, c);
-		c.gridx++;
-		selectPane.add(close, c);
-
-		popup = PopupFactory.getSharedInstance().getPopup(toolBar, selectPane,
-				ct.x, pt.y + ct.y + but.getHeight());
-		popup.show();
-	}
+    popup = PopupFactory.getSharedInstance().getPopup(toolBar, selectPane, ct.x, pt.y + ct.y + but.getHeight());
+    popup.show();
+  }
 
 }

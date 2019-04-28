@@ -118,53 +118,10 @@ public class SingleImageController implements ImageController {
     if (brush == null) {
       return;
     }
-    Graphics2D g = image.createGraphics();
-    brush.apply(g, x, y);
-    g.dispose();
-    UndoableEdit edit = createUndoableEdit(brush, x, y);
-    if (edit != null) {
-      manager.addEdit(edit);
-    }
+    brush.apply(this, x, y, manager);
   }
 
-  private UndoableEdit createUndoableEdit(final Brush brush, final int x, final int y) {
-    final Rectangle r = brush.getAffectedArea(x, y);
-    if (r == null) {
-      return null;
-    }
-
-    final int[] oldData = sample(r); // this could become too expensive
-    return new AbstractUndoableEdit() {
-
-      @Override
-      public boolean canRedo() {
-        return true;
-      }
-
-      @Override
-      public boolean canUndo() {
-        return true;
-      }
-
-      @Override
-      public void redo() throws CannotRedoException {
-        Graphics2D g = image.createGraphics();
-        brush.apply(g, x, y);
-        g.dispose();
-      }
-
-      @Override
-      public void undo() throws CannotUndoException {
-        WritableRaster raster = image.getRaster();
-        // reset raster for the affected area.
-        raster.setPixels(r.x, r.y, r.width, r.height, oldData);
-      }
-
-    };
-
-  }
-
-  private int[] sample(Rectangle r) {
+  public int[] samplePixels(Rectangle r) {
     int[] data = new int[r.width * r.height * 4];
     WritableRaster raster = image.getRaster();
     raster.getPixels(r.x, r.y, r.width, r.height, data);
@@ -226,7 +183,7 @@ public class SingleImageController implements ImageController {
   public void setColorAt(int x, int y) {
     Color c = sample(x, y);
     if (c.getAlpha() == 0) {
-      this.setBrush(new EraseBrush(this));
+      this.setBrush(new EraseBrush());
     } else {
       // find brush with color and change to that brush
       this.setBrush(ColorBrush.createColorBrush(this, c));

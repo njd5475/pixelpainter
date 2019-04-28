@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +35,8 @@ public interface ImageController {
   public void save(File selectedFile, String extension) throws IOException;
 
   public Color sample(int x, int y);
+  
+  public int[] samplePixels(Rectangle r);
 
   public void clearColor(int x, int y);
 

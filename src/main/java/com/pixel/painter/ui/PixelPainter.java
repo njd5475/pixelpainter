@@ -46,17 +46,15 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -142,11 +140,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   /**
    * 
    */
-  private static final long serialVersionUID = -1341074200545654219L;
-
-  private static final Color GRID_COLOR = Color.black;
-
-  private static final String version = "v0.2";
+  private static final long   serialVersionUID = -1341074200545654219L;
+  private static final Color  GRID_COLOR       = Color.black;
+  private static final String version          = "v0.2";
 
   private static boolean               gridOn  = true;
   private static boolean               preview = true;
@@ -158,11 +154,17 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private static Map<Image, Rectangle> sketchLocations;
   private static List<Image>           sketchImages;
   private static PaletteManager        paletteManager;
+  private static Map<String, Brush>    allBrushes;
 
   static {
-    sketchLocations = new HashMap<Image, Rectangle>();
-    sketchImages    = new LinkedList<Image>();
+    sketchLocations = new HashMap<>();
+    sketchImages    = new LinkedList<>();
     paletteManager  = new PaletteManager();
+    allBrushes      = new TreeMap<>();
+    Brush erase = new EraseBrush();
+    allBrushes.put(erase.getName(), erase);
+    Brush fill = new FillMode();
+    allBrushes.put(fill.getName(), fill);
   }
 
   private ImageController ctrl;
@@ -176,22 +178,15 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private Map<File, ImageController> controllers;
 
   private SpriteController spriteController;
+  private Image            previewImage;
+  private BufferedImage    backgroundImage;
 
-  private Image previewImage;
-
-  private BufferedImage backgroundImage;
-
-  private Set<ModifyListener> modifyListeners;
-
-  private static Set<Overlay> overlays;
-
+  private Set<ModifyListener>    modifyListeners;
+  private static Set<Overlay>    overlays;
   private static PreviewAnimator animator;
-
-  private static int imageHeight;
-
-  private static int imageWidth;
-
-  public static Dimension toolButtonSize;
+  private static int             imageHeight;
+  private static int             imageWidth;
+  public static Dimension        toolButtonSize;
 
   public PixelPainter(ImageController ctrl, File file) {
     this.file       = file;
@@ -430,16 +425,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private void resetToolbar() {
-    for (Component c : tools.getComponents()) {
-      if(c instanceof JButton) {
-        JButton but = (JButton) c;
-        Action  a   = but.getAction();
-        if(a instanceof Brush) {
-          Brush b = (Brush) a;
-          b.changeControllers(ctrl);
-        }
-      }
-    }
+
   }
 
   private void handleMouseEvent(MouseEvent e) {
@@ -693,17 +679,17 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     tools = new JToolBar();
     Font        f            = getFontAwesome();
     FontMetrics fm           = tools.getFontMetrics(f);
-    String      eraseUnicode = "\uf12d";
+    
     System.out.println("Font info: " + fm.getLeading() + " ");
     toolButtonSize = new Dimension(2 * fm.getMaxAdvance(),
         fm.getLeading() + fm.getMaxAscent() + fm.getHeight() + fm.getMaxDescent());
-    JButton erase = tools.add(new EraseBrush(ctrl, eraseUnicode, null));
+    JButton erase = tools.add(allBrushes.get("EraseBrush").createAsAction(ctrl));
     erase.setFont(f);
     erase.setForeground(Color.black);
     erase.setPreferredSize(toolButtonSize);
     erase.setToolTipText("Eraser");
 
-    JButton but = tools.add(new FillMode(ctrl, "\uf576"));
+    JButton but = tools.add(allBrushes.get("FillMode").createAsAction(ctrl));
     but.setFont(f);
     but.setPreferredSize(toolButtonSize);
     but.setForeground(Color.blue);
@@ -859,7 +845,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
                 Color color = (Color) evt.getNewValue();
 
                 Brush brush = painter.getController().createColorBrush(color);
-                tools.add(brush);
+                tools.add(brush.createAsAction(painter.getController()));
                 painter.getController().setBrush(brush);
               }
             });

@@ -1,57 +1,106 @@
 package com.pixel.painter.brushes;
 
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.image.WritableRaster;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
+import javax.swing.undo.UndoableEdit;
 
 import com.pixel.painter.controller.ImageController;
 
-public abstract class Brush extends AbstractAction {
+public abstract class Brush {
 
-	private static JComponent	current;
+  private String name;
+  private Icon   icon;
 
-	private ImageController		ctrl;
+  public Brush(String name) {
+    this.name         = name;
+  }
 
-	public Brush(ImageController ctrl) {
-		this.ctrl = ctrl;
-	}
+  public Brush(String name, Icon icon) {
+    this.name = name;
+    this.icon = icon;
+  }
 
-	public Brush(ImageController ctrl, String name) {
-		super(name);
-		this.ctrl = ctrl;
-	}
+  public String getName() {
+    return name;
+  }
 
-	public Brush(ImageController ctrl, String name, Icon icon) {
-		super(name, icon);
-		this.ctrl = ctrl;
-	}
+  public Icon getIcon() {
+    return icon;
+  }
 
-	public void changeControllers(ImageController ctrl) {
-		this.ctrl = ctrl;
-	}
+  public abstract void apply(ImageController ctrl, int x, int y, UndoManager manager);
 
-	protected ImageController getController() {
-		return ctrl;
-	}
+  public Action createAsAction(ImageController ctrl) {
+    return new BrushAction(name, icon, ctrl, this);
+  }
 
-	public abstract void apply(Graphics2D g, int x, int y);
+  public abstract Rectangle getAffectedArea(int x, int y);
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (current != null) {
-			current.setBorder(BorderFactory.createEmptyBorder(7, 7, 7, 7));
-		}
-		JComponent comp = (JComponent) e.getSource();
-		ctrl.setBrush(this); // set this brush
+  protected UndoableEdit createUndoableEdit(ImageController ctrl, Rectangle affectedArea, int x, int y) {
+    final int[] oldData = ctrl.samplePixels(affectedArea); // this could become too expensive
+    return new AbstractUndoableEdit() {
 
-		current = comp;
-	}
+      /**
+       * 
+       */
+      private static final long serialVersionUID = 1L;
 
-	public abstract Rectangle getAffectedArea(int x, int y);
+      @Override
+      public boolean canRedo() {
+        return true;
+      }
 
+      @Override
+      public boolean canUndo() {
+        return true;
+      }
+
+      @Override
+      public void redo() throws CannotRedoException {
+        Brush.this.apply(ctrl, x, y, null);
+      }
+
+      @Override
+      public void undo() throws CannotUndoException {
+        WritableRaster raster = ctrl.getImage().getRaster();
+        // reset raster for the affected area.
+        raster.setPixels(affectedArea.x, affectedArea.y, affectedArea.width, affectedArea.height, oldData);
+      }
+
+    };
+
+  }
+  
+  public static class BrushAction extends AbstractAction {
+    private Brush brush;
+    private ImageController ctrl;
+
+    public BrushAction(String name, Icon icon, ImageController ctrl, Brush brush) {
+      super(name, icon);
+      this.ctrl = ctrl;
+      this.brush = brush;
+    }
+    
+    public Brush getBrush() {
+      return brush;
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      JComponent comp = (JComponent) e.getSource();
+      comp.setBorder(BorderFactory.createEmptyBorder(7, 7, 7, 7));
+      ctrl.setBrush(brush); // set this brush
+    }
+  }
 }

@@ -10,7 +10,10 @@ import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.undo.UndoManager;
 
 import com.pixel.painter.controller.ImageController;
 
@@ -20,26 +23,32 @@ public class ColorBrush extends Brush {
 	private final Color										color;
 	private Color													oldColor;
 
-	private ColorBrush(ImageController ctrl, Color color) {
-		super(ctrl, null, getColorBrushIcon(color));
+	private ColorBrush(Color color) {
+		super("ColorBrush", getColorBrushIcon(color));
 		this.color = color;
 	}
 
 	public static ColorBrush createColorBrush(ImageController ctrl, Color color) {
 		ColorBrush brush = brushes.get(color);
 		if (brush == null) {
-			brush = new ColorBrush(ctrl, color);
+			brush = new ColorBrush(color);
 			brushes.put(color, brush);
 		}
 		return brush;
 	}
-
+	
 	@Override
-	public void actionPerformed(ActionEvent e) {
-		super.actionPerformed(e);
-		getController().setFillColor(color);
+	public Action createAsAction(ImageController ctrl) {
+	  return new BrushAction(getName(), getIcon(), ctrl, this) {
+      @Override
+	    public void actionPerformed(ActionEvent e) {
+        super.actionPerformed(e);
+	      ctrl.setFillColor(color);
+	    }
+	  };
 	}
 
+	
 	private static Icon getColorBrushIcon(final Color color2) {
 		Icon ico = new Icon() {
 
@@ -68,11 +77,13 @@ public class ColorBrush extends Brush {
 	}
 
 	@Override
-	public void apply(Graphics2D g, int x, int y) {
-		oldColor = this.getController().sample(x, y);
+	public void apply(ImageController ctrl, int x, int y, UndoManager undolog) {
+	  Graphics2D g = ctrl.getImage().createGraphics();
+		oldColor = ctrl.sample(x, y);
 		g.setColor(color);
-		this.getController().setColorAt(x, y, color);
+		ctrl.setColorAt(x, y, color);
 		// g.drawOval(x - 1, y - 1, 1, 1);
+		g.dispose();
 	}
 
 	@Override

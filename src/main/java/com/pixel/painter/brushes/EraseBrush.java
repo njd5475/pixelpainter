@@ -3,23 +3,29 @@ package com.pixel.painter.brushes;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-import javax.swing.Icon;
+import javax.swing.Action;
+import javax.swing.undo.UndoManager;
 
 import com.pixel.painter.controller.ImageController;
 
 public class EraseBrush extends Brush {
 
-	public EraseBrush(ImageController ctrl) {
-		super(ctrl);
-	}
+  private String eraseUnicode;
 
-	public EraseBrush(ImageController ctrl, String name, Icon icon) {
-		super(ctrl, name, icon);
+	public EraseBrush() {
+		super("EraseBrush");
+		this.eraseUnicode = "\uf12d";
+	}
+	
+	public Action createAsAction(ImageController ctrl) {
+	  return new BrushAction(eraseUnicode, getIcon(), ctrl, this);
 	}
 
 	@Override
-	public void apply(Graphics2D g, int x, int y) {
-		this.getController().clearColor(x, y);
+	public void apply(ImageController ctrl, int x, int y, UndoManager undolog) {
+	  Graphics2D g = ctrl.getImage().createGraphics();
+		ctrl.clearColor(x, y);
+		g.dispose();
 	}
 
 	@Override

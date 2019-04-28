@@ -48,6 +48,8 @@ public interface ImageController {
   public Color getFillColor();
 
   public void addAllModifyListeners(Set<ModifyListener> ls);
+  
+  public void addModifyListener(ModifyListener l);
 
   public BufferedImage getImage();
 

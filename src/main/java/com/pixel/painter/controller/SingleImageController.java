@@ -107,6 +107,12 @@ public class SingleImageController implements ImageController {
       l.brushChanged(old, update, this);
     }
   }
+  
+  private void notifyModifyListeners(ImageController ctrl) {
+    for(ModifyListener l : this.modifyListeners) {
+      l.modified(ctrl);
+    }
+  }
 
   public void applyBrush(int x, int y) {
     if (brush == null) {
@@ -214,6 +220,7 @@ public class SingleImageController implements ImageController {
       colorPoints.put(sample, points);
     }
     points.add(new Point(x, y));
+    notifyModifyListeners(this);
   }
 
   public void setColorAt(int x, int y) {
@@ -225,6 +232,7 @@ public class SingleImageController implements ImageController {
       this.setBrush(ColorBrush.createColorBrush(this, c));
     }
     fillColor = c;
+    notifyModifyListeners(this);
   }
 
   public Brush getBrush() {
@@ -263,6 +271,11 @@ public class SingleImageController implements ImageController {
 
   public static ImageController createNewDefaultInstance() {
     return createNewInstance(32, 32);
+  }
+
+  @Override
+  public void addModifyListener(ModifyListener l) {
+    this.modifyListeners.add(l);
   }
 
 }

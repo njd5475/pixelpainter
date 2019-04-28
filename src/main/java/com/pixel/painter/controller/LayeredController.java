@@ -26,8 +26,20 @@ public class LayeredController implements ImageController {
   private Brush                               currentBrush;
   private ImageController                     currentCtrl;
   private Color                               fillColor;
+  private Set<ModifyListener>                 listeners;
+  private ModifyListener                      oneListener;
 
   public LayeredController() {
+    listeners = new HashSet<>();
+    oneListener = new ModifyListener() {
+      
+      @Override
+      public void modified(ImageController imgCtrl) {
+        for(ModifyListener l : listeners) {
+          l.modified(imgCtrl);
+        }
+      }
+    };
   }
 
   public void addLayer(ImageController ctrl) {
@@ -38,6 +50,7 @@ public class LayeredController implements ImageController {
     if(currentCtrl == null) {
       changeLayer(layers.size());
     }
+    ctrl.addModifyListener(oneListener);
   }
 
   public int getLayerCount() {
@@ -159,9 +172,8 @@ public class LayeredController implements ImageController {
 
   @Override
   public void addAllModifyListeners(Set<ModifyListener> ls) {
-    for (ImageController ctrl : layers.values()) {
-      ctrl.addAllModifyListeners(ls);
-    }
+    System.out.println("Add all modify listeners to LayeredController");
+    listeners.addAll(ls);
   }
 
   @Override
@@ -179,6 +191,11 @@ public class LayeredController implements ImageController {
     for (ImageController ctrl : layers.values()) {
       ctrl.setAllColorsAt(x, y, newColor);
     }
+  }
+
+  @Override
+  public void addModifyListener(ModifyListener l) {
+    listeners.add(l);
   }
 
 }

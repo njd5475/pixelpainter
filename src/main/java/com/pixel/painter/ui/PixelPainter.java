@@ -6,7 +6,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Event;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.FontMetrics;
@@ -41,6 +40,8 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -94,9 +95,10 @@ import com.pixel.painter.settings.Json;
 import com.pixel.painter.settings.Settings;
 import com.pixel.painter.ui.dialog.NewFilePanel;
 import com.pixel.painter.ui.dialog.NewImagePanel;
-import com.pixel.painter.ui.overlays.ColorHoverOverlay;
+import com.pixel.painter.ui.overlays.ColorInfoOverlay;
 import com.pixel.painter.ui.overlays.LayerOverlay;
 import com.pixel.painter.ui.overlays.Overlay;
+import com.pixel.painter.ui.overlays.PreviewOverlay;
 import com.pixel.painter.ui.overlays.SpriteFrameBarOverlay;
 import com.pixel.painter.ui.overlays.colorbar.ColorBarOverlay;
 
@@ -137,7 +139,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public enum FILE_CHOOSER {
-    OPEN_IMAGE, SAVE_IMAGE
+    OPEN_IMAGE,
+    SAVE_IMAGE
   };
 
   /**
@@ -289,7 +292,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       public void mouseReleased(MouseEvent e) {
         // if (overlay.isInside(e.getPoint())) {
         for (Overlay o : overlays) {
-          o.mouseReleased(e);
+           o.mouseReleased(e);
         }
         // } else {
         if(!e.isConsumed()) {
@@ -489,50 +492,30 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     if(gridOn) {
       drawGrid((Graphics2D) init);
     }
-    if(preview && !animation) {
-      drawPreview(init);
-    }
-    if(preview && animation) {
-      drawAnimationPreview(init);
-    }
+//    if(preview && !animation) {
+//      drawPreview(init);
+//    }
+//    if(preview && animation) {
+//      drawAnimationPreview(init);
+//    }
     g.dispose();
     for (Overlay o : overlays) {
       o.render((Graphics2D) init, this.getWidth(), this.getHeight());
     }
   }
 
-  private void drawAnimationPreview(Graphics init) {
-    Graphics2D g       = (Graphics2D) init.create();
-    Dimension  imgSize = ctrl.getSize();
-    if(previewImage != null) {
-      imgSize = new Dimension(previewImage.getWidth(null), previewImage.getHeight(null));
-    }
-    g.setStroke(new BasicStroke(1));
-    g.translate(getWidth() - Math.min(64, imgSize.width) - 1, 2);
-    g.setColor(Color.yellow.darker());
-    if(previewImage == null) {
-      int w = g.getFontMetrics().stringWidth("N/A");
-      g.drawString("N/A", imgSize.width / 2 - w / 2, imgSize.height / 2 + g.getFontMetrics().getAscent() / 2);
-    } else {
-      g.drawImage(previewImage, 0, 0, null);
-    }
-    g.drawRect(-1, -1, Math.min(64, imgSize.width + 1), Math.min(64, imgSize.height + 1));
-    g.setColor(Color.yellow.darker());
-    g.drawRect(-1, -1, Math.min(64, imgSize.width + 1), Math.min(64, imgSize.height + 1));
-    g.dispose();
-  }
 
-  private void drawPreview(Graphics init) {
-    Graphics2D g = (Graphics2D) init.create();
-
-    Dimension imgSize = ctrl.getSize();
-    g.setStroke(new BasicStroke(1));
-    g.translate(getWidth() - Math.min(64, imgSize.width) - 1, 2);
-    ctrl.render(g, Math.min(64, imgSize.width), Math.min(64, imgSize.height));
-    g.setColor(Color.yellow.darker());
-    g.drawRect(-1, -1, Math.min(64, imgSize.width + 1), Math.min(64, imgSize.height + 1));
-    g.dispose();
-  }
+//  private void drawPreview(Graphics init) {
+//    Graphics2D g = (Graphics2D) init.create();
+//
+//    Dimension imgSize = ctrl.getSize();
+//    g.setStroke(new BasicStroke(1));
+//    g.translate(getWidth() - Math.min(64, imgSize.width) - 1, 2);
+//    ctrl.render(g, Math.min(64, imgSize.width), Math.min(64, imgSize.height));
+//    g.setColor(Color.yellow.darker());
+//    g.drawRect(-1, -1, Math.min(64, imgSize.width + 1), Math.min(64, imgSize.height + 1));
+//    g.dispose();
+//  }
 
   public void setImageTransform(Graphics2D g) {
     Dimension d       = ctrl.getSize();
@@ -713,8 +696,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     overlays = new HashSet<Overlay>();
     overlays.add(new ColorBarOverlay(tools, ctrl, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, ctrl, sprites));
-    overlays.add(new ColorHoverOverlay(tools, pp, ctrl));
+    overlays.add(new ColorInfoOverlay(tools, pp, ctrl));
     overlays.add(new LayerOverlay(tools, pp, ctrl));
+    overlays.add(new PreviewOverlay(tools, ctrl));
   }
 
   public static void onExit(int closeOp) {
@@ -1169,49 +1153,50 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   protected void openNewFile(File file) {
-    try {
-      ImageController newCtrl = SingleImageController.createNewInstance(file);
-      this.changeImageController(newCtrl, file);
-      controllers.put(file, newCtrl);
-
-      // reload all the image lists
-      imageMenu.removeAll();
-      imageMenu.setEnabled(!controllers.isEmpty());
-      JMenuItem menuItem;
-      for (final File f : new TreeSet<File>(controllers.keySet())) {
-        menuItem = new JMenuItem(String.format("%s - %10s", f.getName(), f.getParent()));
-        menuItem.addActionListener(new ActionListener() {
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            changeImageController(controllers.get(f), f);
-          }
-        });
-
-        imageMenu.add(menuItem);
+    if(file.getName().endsWith(".pal")) {
+      FileInputStream fis;
+      try {
+        fis = new FileInputStream(file);
+        ColorPalette cp = ColorPalette.createFromPal(fis);
+        paletteManager.addPalette(file.getName().substring(0, file.getName().lastIndexOf('.')), cp);
+      } catch (FileNotFoundException e) {
+        e.printStackTrace();
+      } catch (IOException e) {
+        e.printStackTrace();
       }
-      imageMenu.validate();
-      this.file = file;
-    } catch (IOException e1) {
-      e1.printStackTrace();
-      JOptionPane.showMessageDialog(frame, "Error Loading Image",
-          "There was a problem loading the image: " + e1.getMessage(), JOptionPane.ERROR_MESSAGE);
+    } else {
+      try {
+        ImageController newCtrl = SingleImageController.createNewInstance(file);
+        this.changeImageController(newCtrl, file);
+        controllers.put(file, newCtrl);
+
+        // reload all the image lists
+        imageMenu.removeAll();
+        imageMenu.setEnabled(!controllers.isEmpty());
+        JMenuItem menuItem;
+        for (final File f : new TreeSet<File>(controllers.keySet())) {
+          menuItem = new JMenuItem(String.format("%s - %10s", f.getName(), f.getParent()));
+          menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+              changeImageController(controllers.get(f), f);
+            }
+          });
+
+          imageMenu.add(menuItem);
+        }
+        imageMenu.validate();
+        this.file = file;
+      } catch (IOException e1) {
+        e1.printStackTrace();
+        JOptionPane.showMessageDialog(frame, "Error Loading Image",
+            "There was a problem loading the image: " + e1.getMessage(), JOptionPane.ERROR_MESSAGE);
+      }
     }
   }
 
   @Override
   public void paletteAdded(final PaletteManager paletteManager, final String name, final ColorPalette palette) {
-    JMenuItem paletteEdit = new JMenuItem("Edit...");
-    paletteEdit.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        SwingUtilities.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            showPaletteEditorDialog(new PaletteEditor(paletteManager, name, palette));
-          }
-        });
-      }
-    });
     JMenuItem paletteUse = new JMenuItem("Use");
     paletteUse.addActionListener((e) -> {
       Overlay old = null;
@@ -1225,14 +1210,27 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
       overlays.add(new ColorBarOverlay(tools, ctrl, palette));
     });
+    JMenuItem paletteEdit = new JMenuItem("Edit...");
+    paletteEdit.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            showPaletteEditorDialog(new PaletteEditor(paletteManager, name, palette));
+          }
+        });
+      }
+    });
+
     if(paletteMenu != null) {
       Component menuComponent = paletteMenu.getMenuComponent(paletteMenu.getMenuComponentCount() - 1);
       if(!(menuComponent instanceof JPopupMenu.Separator)) {
         paletteMenu.addSeparator();
       }
       JMenu paletteMenus = new JMenu(name);
-      paletteMenus.add(paletteEdit);
       paletteMenus.add(paletteUse);
+      paletteMenus.add(paletteEdit);
       paletteMenu.add(paletteMenus);
       paletteMenu.validate();
     }

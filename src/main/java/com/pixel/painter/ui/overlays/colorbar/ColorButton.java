@@ -55,6 +55,6 @@ public class ColorButton {
   }
 
   public Rectangle getBounds() {
-    return (new Rectangle(overlay.getX() + x, y + overlay.getY(), overlay.getButtonWidth(), overlay.getButtonHeight()));
+    return (new Rectangle(overlay.getX() + x, overlay.getY() + y, overlay.getButtonWidth(), overlay.getButtonHeight()));
   }
 }

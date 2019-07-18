@@ -13,7 +13,7 @@ import javax.swing.JToolBar;
 import com.pixel.painter.controller.ImageController;
 import com.pixel.painter.ui.PixelPainter;
 
-public class ColorHoverOverlay extends Overlay {
+public class ColorInfoOverlay extends Overlay {
 
   private PixelPainter viewer;
   private int          red;
@@ -27,7 +27,7 @@ public class ColorHoverOverlay extends Overlay {
   private boolean      greenSelected = false;
   private boolean      alphaSelected = false;
 
-  public ColorHoverOverlay(JToolBar toolbar, PixelPainter painter, ImageController ctrl) {
+  public ColorInfoOverlay(JToolBar toolbar, PixelPainter painter, ImageController ctrl) {
     super(toolbar, ctrl);
     this.viewer = painter;
   }

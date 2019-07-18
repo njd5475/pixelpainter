@@ -30,14 +30,15 @@ import com.pixel.painter.ui.overlays.Overlay;
 
 public class ColorBarOverlay extends Overlay {
 
-  private static final int              FROM_RIGHT_SIDE   = 3;
-  private static final int              OVERLAY_WIDTH     = 38;
-  private static final int              BUTTON_SEPARATION = 2;
+  private static final int              FROM_RIGHT_SIDE          = 3;
+  private static final int              OVERLAY_WIDTH            = 38;
+  private static final int              BUTTON_SEPARATION_X      = 2;
+  private static final int              BUTTON_SEPARATION_COLUMN = 10;
   private Color                         highlightedColor;
   private Color                         selected;
   private ColorButton                   buttonHighlighted;
   private final Set<Color>              colors;
-  private Map<Color, List<ColorButton>> selectedVariants  = new HashMap<>();
+  private Map<Color, List<ColorButton>> selectedVariants         = new HashMap<>();
 
   public ColorBarOverlay(JToolBar toolbar, ImageController ctrl, ColorPalette palette) {
     super(toolbar, ctrl);
@@ -47,7 +48,7 @@ public class ColorBarOverlay extends Overlay {
 
   @Override
   public int getWidth() {
-    return OVERLAY_WIDTH;
+    return (OVERLAY_WIDTH) * getNumberOfColumns();
   }
 
   @Override
@@ -58,10 +59,16 @@ public class ColorBarOverlay extends Overlay {
   private void buildColorButtons() {
     int numVariants = 10;
     int y           = 0;
-    int slideWidth  = BUTTON_SEPARATION + numVariants * (getButtonWidth() + BUTTON_SEPARATION);
+    int slideWidth  = BUTTON_SEPARATION_X + (numVariants-1) * (getButtonWidth() + BUTTON_SEPARATION_X);
+    int x           = 0;
 
     for (Color c : colors) {
-      List<ColorButton> buts = buildColorButtonRibbon(-slideWidth, y, c, numVariants);
+      if(y+35 >= getHeight()) {
+        y = 0;
+        x = 0;
+      }
+      
+      List<ColorButton> buts = buildColorButtonRibbon(x - slideWidth, y, c, numVariants);
       selectedVariants.put(c, buts);
       y += 35;
     }
@@ -89,7 +96,7 @@ public class ColorBarOverlay extends Overlay {
       buttons.add(new ColorButton(x, y, color, this));
 
       // step function
-      x += this.getButtonWidth() + BUTTON_SEPARATION;
+      x += this.getButtonWidth() + BUTTON_SEPARATION_X;
     }
     return buttons;
   }
@@ -136,8 +143,8 @@ public class ColorBarOverlay extends Overlay {
   }
 
   public void addSelectedBrush(Color color) {
-    Brush    brush   = ctrl.createColorBrush(color);
-    JToolBar toolbar = getToolBar();
+    Brush      brush   = ctrl.createColorBrush(color);
+    JToolBar   toolbar = getToolBar();
     Set<Brush> brushes = new HashSet<Brush>();
     for (Component c : toolbar.getComponents()) {
       if(c instanceof JButton) {
@@ -161,6 +168,9 @@ public class ColorBarOverlay extends Overlay {
 
   @Override
   public void render(Graphics2D init, int width, int height) {
+    if(this.screenWidth != width || this.screenHeight != height) {
+      buildColorButtons();
+    }
 
     this.screenHeight = height;
     this.screenWidth  = width;
@@ -177,17 +187,18 @@ public class ColorBarOverlay extends Overlay {
     int barBorder   = 3;
     int slideBorder = 8;
     int numVariants = 10;
-    int slideWidth  = numVariants * (getButtonWidth() + BUTTON_SEPARATION);
+    int slideWidth  = (numVariants-1) * (getButtonWidth() + BUTTON_SEPARATION_X);
 
     g.setColor(background);
     g.translate(getX(), getY());
     g.fillRoundRect(-barBorder, -barBorder, getWidth(), getHeight(), 10, 10);
 
+    int x = 0;
     for (Color c : colors) {
-      boolean highlight = (new Rectangle(getX(), y + getY(), bW, bW)).contains(new Point(mouseX, mouseY));
+      boolean highlight = (new Rectangle(getX() + x, y + getY(), bW, bW)).contains(new Point(mouseX, mouseY));
 
       if(highlightedColor != null && !highlight && highlightedColor.hashCode() == c.hashCode()) {
-        highlight = (new Rectangle(getX() - slideWidth, getY() + y - slideBorder / 2,
+        highlight = (new Rectangle(getX() +  - slideWidth, getY() + y - slideBorder / 2,
             slideWidth + OVERLAY_WIDTH + bW + slideBorder / 2, bW + slideBorder)).contains(new Point(mouseX, mouseY));
         if(!highlight) {
           highlightedColor = null;
@@ -197,7 +208,8 @@ public class ColorBarOverlay extends Overlay {
       // draw horizontal selection
       if(highlight) {
         g.setColor(SLIDEMENU_BACKGROUND);
-        g.fillRoundRect(-slideWidth - slideBorder/2, y - slideBorder/2, slideWidth + bW + slideBorder / 2, bW + slideBorder, 10, 10);
+        g.fillRoundRect(-slideWidth - slideBorder / 2, y - slideBorder / 2, slideWidth + bW + slideBorder / 2,
+            bW + slideBorder, 10, 10);
 
         // draw the actual color buttons
         List<ColorButton> buttons = this.selectedVariants.get(c);
@@ -222,6 +234,12 @@ public class ColorBarOverlay extends Overlay {
       g.drawRoundRect(slideBorder / 2, y, bW, bW, 8, 8);
 
       y += 35;
+
+      if(y + 2 * 35 > getScreenHeight()) {
+        y = 0;
+        x += getButtonWidth() + BUTTON_SEPARATION_COLUMN;
+        g.translate(getButtonWidth() + BUTTON_SEPARATION_COLUMN, 0);
+      }
     }
 
     drawTrashButton(g, new Rectangle2D.Double(0, y, bW, bW));
@@ -256,7 +274,7 @@ public class ColorBarOverlay extends Overlay {
   }
 
   public int getX() {
-    return getScreenWidth() - OVERLAY_WIDTH - FROM_RIGHT_SIDE;
+    return getScreenWidth() - (getNumberOfColumns() * OVERLAY_WIDTH) - FROM_RIGHT_SIDE;
   }
 
   public int getY() {
@@ -269,6 +287,11 @@ public class ColorBarOverlay extends Overlay {
 
   public int getButtonHeight() {
     return 25;
+  }
+
+  public int getNumberOfColumns() {
+    int overlayWidth = (colors.size() * (getButtonHeight() + BUTTON_SEPARATION_COLUMN));
+    return Math.max(1, (int) Math.ceil(overlayWidth / (double) getHeight()));
   }
 
 }

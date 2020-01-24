@@ -1,50 +1,112 @@
 package com.pixel.painter.ui.materials;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import javax.swing.JComponent;
 
 public class Material {
 
-  private int   height;
-  private int   width;
-  private int   y;
-  private int   x;
-  private Color color;
+  private final Material         parent;
+  private final MaterialRenderer renderer;
 
-  public Material(int x, int y, int width, int height, Color color) {
-    this.color = color;
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
+  protected Material(Material m, MaterialRenderer renderer) {
+    this.parent = m;
+    this.renderer = renderer;
   }
 
-  public void draw(Graphics2D g) {
-    g.setColor(color);
-    g.fillRect(x, y, width, height);
+  public MaterialRenderer getRenderer() {
+    return renderer;
   }
   
+  public MaterialBuilder derive() {
+    return new MaterialBuilder(this);
+  }
+
+  public int getX() {
+    if(this.parent == null) {
+      return 0;
+    }
+    return this.parent.getX();
+  }
+
+  public int getY() {
+    if(this.parent == null) {
+      return 0;
+    }
+    return this.parent.getY();
+  }
+
+  public int getWidth() {
+    if(this.parent == null) {
+      return 0;
+    }
+    return this.parent.getWidth();
+  }
+
+  public int getHeight() {
+    if(this.parent == null) {
+      return 0;
+    }
+    return this.parent.getHeight();
+  }
+
   public void mouseOver() {
-    
+    if(this.parent != null) {
+      this.parent.mouseOver();
+    }
   }
-  
+
   public void mouseClicked() {
-    
+    if(this.parent != null) {
+      this.parent.mouseOver();
+    }
   }
-  
+
   public void mouseDown() {
-    
+    if(this.parent != null) {
+      this.parent.mouseDown();
+    }
   }
-  
+
   public void mouseUp() {
-    
+    if(this.parent != null) {
+      this.parent.mouseUp();
+    }
   }
-  
+
   public void keyDown() {
-    
+    if(this.parent != null) {
+      this.parent.keyDown();
+    }
   }
-  
+
   public void keyUp() {
-    
+    if(this.parent != null) {
+      this.parent.keyUp();
+    }
   }
+
+  public static Material getScreenFor(final JComponent c) {
+    Material m = new Material(null, MaterialRenderers.CLEAR) {
+      public int getX() {
+        return c.getX();
+      }
+
+      @Override
+      public int getY() {
+        return c.getY();
+      }
+
+      @Override
+      public int getWidth() {
+        return c.getWidth();
+      }
+
+      @Override
+      public int getHeight() {
+        return c.getHeight();
+      }
+      
+    };
+    return m;
+  }
+
 }

@@ -59,16 +59,16 @@ public class ColorBarOverlay extends Overlay {
   private void buildColorButtons() {
     int numVariants = 10;
     int y           = 0;
-    int slideWidth  = BUTTON_SEPARATION_X + (numVariants-1) * (getButtonWidth() + BUTTON_SEPARATION_X);
-    int x           = 0;
+    int slideWidth  = BUTTON_SEPARATION_X + (numVariants - 1) * (getButtonWidth() + BUTTON_SEPARATION_X);
+    int x           = FROM_RIGHT_SIDE;
 
     for (Color c : colors) {
-      if(y+35 >= getHeight()) {
+      if (y + 35 >= getHeight()) {
         y = 0;
-        x = 0;
+        x = FROM_RIGHT_SIDE;
       }
-      
-      List<ColorButton> buts = buildColorButtonRibbon(x - slideWidth, y, c, numVariants);
+
+      List<ColorButton> buts = buildColorButtonRibbon(x, y, c, numVariants);
       selectedVariants.put(c, buts);
       y += 35;
     }
@@ -76,38 +76,17 @@ public class ColorBarOverlay extends Overlay {
 
   private List<ColorButton> buildColorButtonRibbon(int x, int y, Color c, int numVariants) {
     List<ColorButton> buttons = new LinkedList<>();
-    float[]           hsb     = new float[3];
-    Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), hsb);
-
-    float hue     = hsb[0];
-    float sat     = hsb[1];
-    float bri     = hsb[2];
-    float percent = 1.0f;
-    Color color   = null;
-
-    // initial offset
-    x += 3;
-
-    for (int i = 0; i < numVariants; ++i) {
-      percent -= 0.10f;
-      float p = 1.0f - percent;
-
-      color = Color.getHSBColor(hue, sat, bri * p);
-      buttons.add(new ColorButton(x, y, color, this));
-
-      // step function
-      x += this.getButtonWidth() + BUTTON_SEPARATION_X;
-    }
+    buttons.add(new ColorButton(x, y, c, this));
     return buttons;
   }
 
   @Override
   public void mouseMoved(MouseEvent e) {
     super.mouseMoved(e);
-    if(selectedVariants.containsKey(highlightedColor)) {
+    if (selectedVariants.containsKey(highlightedColor)) {
       for (ColorButton b : selectedVariants.get(highlightedColor)) {
-        if(b.contains(e.getX(), e.getY())) {
-          if(this.buttonHighlighted != null) {
+        if (b.contains(e.getX(), e.getY())) {
+          if (this.buttonHighlighted != null) {
             this.buttonHighlighted.unhighlight();
           }
           b.highlight();
@@ -120,8 +99,8 @@ public class ColorBarOverlay extends Overlay {
   @Override
   public void mouseReleased(MouseEvent e) {
     super.mouseReleased(e);
-    if(selectedVariants.containsKey(highlightedColor)) {
-      if(this.buttonHighlighted != null && this.buttonHighlighted.contains(e.getX(), e.getY())) {
+    if (selectedVariants.containsKey(highlightedColor)) {
+      if (this.buttonHighlighted != null && this.buttonHighlighted.contains(e.getX(), e.getY())) {
         this.buttonHighlighted.apply();
         e.consume();
       }
@@ -131,8 +110,8 @@ public class ColorBarOverlay extends Overlay {
   @Override
   public void mousePressed(MouseEvent e) {
     super.mouseReleased(e);
-    if(selectedVariants.containsKey(highlightedColor)) {
-      if(this.buttonHighlighted != null && this.buttonHighlighted.contains(e.getX(), e.getY())) {
+    if (selectedVariants.containsKey(highlightedColor)) {
+      if (this.buttonHighlighted != null && this.buttonHighlighted.contains(e.getX(), e.getY())) {
         e.consume();
       }
     }
@@ -147,15 +126,15 @@ public class ColorBarOverlay extends Overlay {
     JToolBar   toolbar = getToolBar();
     Set<Brush> brushes = new HashSet<Brush>();
     for (Component c : toolbar.getComponents()) {
-      if(c instanceof JButton) {
+      if (c instanceof JButton) {
         JButton but = (JButton) c;
-        if(but.getAction() instanceof BrushAction) {
+        if (but.getAction() instanceof BrushAction) {
           BrushAction b = (BrushAction) but.getAction();
           brushes.add(b.getBrush());
         }
       }
     }
-    if(!brushes.contains(brush)) {
+    if (!brushes.contains(brush)) {
       JButton but = toolbar.add(brush.createAsAction(ctrl));
       but.setPreferredSize(PixelPainter.toolButtonSize);
     }
@@ -168,12 +147,12 @@ public class ColorBarOverlay extends Overlay {
 
   @Override
   public void render(Graphics2D init, int width, int height) {
-    if(this.screenWidth != width || this.screenHeight != height) {
+    if (this.screenWidth != width || this.screenHeight != height) {
       buildColorButtons();
     }
 
     this.screenHeight = height;
-    this.screenWidth  = width;
+    this.screenWidth = width;
 
     drawColorBar(init, width, height);
   }
@@ -182,76 +161,24 @@ public class ColorBarOverlay extends Overlay {
     Graphics2D g = (Graphics2D) init.create();
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-    int bW          = getButtonWidth();
-    int y           = 0;
-    int barBorder   = 3;
-    int slideBorder = 8;
-    int numVariants = 10;
-    int slideWidth  = (numVariants-1) * (getButtonWidth() + BUTTON_SEPARATION_X);
+    int buttonWidth = this.getButtonWidth();
+    int y = 0;
 
-    g.setColor(background);
-    g.translate(getX(), getY());
-    g.fillRoundRect(-barBorder, -barBorder, getWidth(), getHeight(), 10, 10);
-
-    int x = 0;
-    for (Color c : colors) {
-      boolean highlight = (new Rectangle(getX() + x, y + getY(), bW, bW)).contains(new Point(mouseX, mouseY));
-
-      if(highlightedColor != null && !highlight && highlightedColor.hashCode() == c.hashCode()) {
-        highlight = (new Rectangle(getX() +  - slideWidth, getY() + y - slideBorder / 2,
-            slideWidth + OVERLAY_WIDTH + bW + slideBorder / 2, bW + slideBorder)).contains(new Point(mouseX, mouseY));
-        if(!highlight) {
-          highlightedColor = null;
-        }
-      }
-
-      // draw horizontal selection
-      if(highlight) {
-        g.setColor(SLIDEMENU_BACKGROUND);
-        g.fillRoundRect(-slideWidth - slideBorder / 2, y - slideBorder / 2, slideWidth + bW + slideBorder / 2,
-            bW + slideBorder, 10, 10);
-
-        // draw the actual color buttons
-        List<ColorButton> buttons = this.selectedVariants.get(c);
-
-        for (ColorButton but : buttons) {
-          Graphics2D butG = (Graphics2D) g.create();
-          but.draw(butG);
-          butG.dispose();
-        }
-        // drawColorVariants(g, width - slideWidth, y, c, numVariants);
-
-        highlightedColor = c;
-      }
-
-      g.setColor((highlightedColor == c && selected != null) ? selected : c);
-      g.fillRoundRect(slideBorder / 2, y, bW, bW, 8, 8);
-      if(highlight) {
-        g.setColor(Color.yellow);
-      } else {
-        g.setColor(Color.white);
-      }
-      g.drawRoundRect(slideBorder / 2, y, bW, bW, 8, 8);
-
-      y += 35;
-
-      if(y + 2 * 35 > getScreenHeight()) {
-        y = 0;
-        x += getButtonWidth() + BUTTON_SEPARATION_COLUMN;
-        g.translate(getButtonWidth() + BUTTON_SEPARATION_COLUMN, 0);
-      }
-    }
-
-    drawTrashButton(g, new Rectangle2D.Double(0, y, bW, bW));
+    g.translate(this.getX(), this.getY());
+    
+    g.setColor(new Color(200,200,200,100));
+    g.fillRect(0, 0, buttonWidth + BUTTON_SEPARATION_COLUMN, this.getHeight());
+    
+    drawTrashButton(g, new Rectangle2D.Double(0, y, buttonWidth, buttonWidth));
 
     g.dispose();
   }
 
   private void drawTrashButton(Graphics2D g, Double double1) {
     g.setFont(PixelPainter.getFontAwesome());
-    String trash = "\uf2ed";
+    String trash    = "\uf2ed";
 
-    float strWidth = g.getFontMetrics().stringWidth(trash);
+    float  strWidth = g.getFontMetrics().stringWidth(trash);
     g.setColor(Color.white);
     g.drawString(trash, (float) (double1.getX() + double1.getWidth() / 2 - strWidth / 2), (float) (double1.getMaxY()));
   }

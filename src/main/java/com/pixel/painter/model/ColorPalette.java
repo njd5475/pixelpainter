@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +36,26 @@ public class ColorPalette {
     for (PaletteChangeListener l : listeners) {
       l.colorAdded(this, color);
     }
+  }
+  
+  public ColorPalette sort() {
+    Color toBeSorted[] = colors.toArray(new Color[colors.size()]);
+    Arrays.parallelSort(toBeSorted, new Comparator<Color>() {
+
+      @Override
+      public int compare(Color o1, Color o2) {
+        float o1HSB[] = new float[4];
+        float o2HSB[] = new float[4];
+        Color.RGBtoHSB(o1.getRed(), o1.getGreen(), o1.getBlue(), o1HSB);
+        Color.RGBtoHSB(o2.getRed(), o2.getGreen(), o2.getBlue(), o2HSB);
+        int hue = 0;
+        int sat = 255;
+        int br = 0;
+        return (int)((o1HSB[0]*hue + o1HSB[1]*sat + o1HSB[2]*br) - (o2HSB[0]*hue + o2HSB[1]*sat + o2HSB[2]*br));
+      }
+      
+    });
+    return createFrom(toBeSorted);
   }
 
   public void removeColor(Color color) {

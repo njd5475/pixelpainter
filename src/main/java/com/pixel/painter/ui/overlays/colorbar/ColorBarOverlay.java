@@ -3,8 +3,6 @@ package com.pixel.painter.ui.overlays.colorbar;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
@@ -26,6 +24,7 @@ import com.pixel.painter.brushes.Brush.BrushAction;
 import com.pixel.painter.controller.ImageController;
 import com.pixel.painter.model.ColorPalette;
 import com.pixel.painter.ui.PixelPainter;
+import com.pixel.painter.ui.materials.Material;
 import com.pixel.painter.ui.overlays.Overlay;
 
 public class ColorBarOverlay extends Overlay {
@@ -39,7 +38,7 @@ public class ColorBarOverlay extends Overlay {
   private ColorButton                   buttonHighlighted;
   private final Set<Color>              colors;
   private Map<Color, List<ColorButton>> selectedVariants         = new HashMap<>();
-
+  
   public ColorBarOverlay(JToolBar toolbar, ImageController ctrl, ColorPalette palette) {
     super(toolbar, ctrl);
     colors = new LinkedHashSet<>(Arrays.asList(palette.getColors()));
@@ -155,6 +154,7 @@ public class ColorBarOverlay extends Overlay {
     this.screenWidth = width;
 
     drawColorBar(init, width, height);
+    
   }
 
   private void drawColorBar(Graphics2D init, int width, int height) {

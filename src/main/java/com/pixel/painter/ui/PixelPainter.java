@@ -1,7 +1,6 @@
 package com.pixel.painter.ui;
 
 import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -81,6 +80,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.pixel.painter.animation.PreviewAnimator;
 import com.pixel.painter.brushes.Brush;
+import com.pixel.painter.brushes.Brush.BrushAction;
 import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.brushes.EraseBrush;
 import com.pixel.painter.brushes.FillMode;
@@ -95,6 +95,8 @@ import com.pixel.painter.settings.Json;
 import com.pixel.painter.settings.Settings;
 import com.pixel.painter.ui.dialog.NewFilePanel;
 import com.pixel.painter.ui.dialog.NewImagePanel;
+import com.pixel.painter.ui.materials.Material;
+import com.pixel.painter.ui.materials.MaterialBuilder;
 import com.pixel.painter.ui.overlays.ColorInfoOverlay;
 import com.pixel.painter.ui.overlays.LayerOverlay;
 import com.pixel.painter.ui.overlays.Overlay;
@@ -164,9 +166,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
   static {
     sketchLocations = new HashMap<>();
-    sketchImages    = new LinkedList<>();
-    paletteManager  = new PaletteManager();
-    allBrushes      = new TreeMap<>();
+    sketchImages = new LinkedList<>();
+    paletteManager = new PaletteManager();
+    allBrushes = new TreeMap<>();
     Brush erase = new EraseBrush();
     allBrushes.put(erase.getName(), erase);
     Brush fill = new FillMode();
@@ -188,14 +190,21 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private BufferedImage    backgroundImage;
 
   private Set<ModifyListener>    modifyListeners;
+  private Material               colorbarMaterial;
+  private MaterialBuilder        builder;
   private static Set<Overlay>    overlays;
+  private static Set<Material>   materials;
   private static PreviewAnimator animator;
   private static int             imageHeight;
   private static int             imageWidth;
   public static Dimension        toolButtonSize;
+  private static Material        paletteMaterial;
 
   public PixelPainter(ImageController ctrl, File file) {
-    this.file       = file;
+    this.file = file;
+
+    overlays = new HashSet<>();
+    materials = new HashSet<>();
     modifyListeners = new HashSet<ModifyListener>();
     ctrl.addBrushChangeListener(this);
     this.loadSavedPalettes(paletteManager);
@@ -241,7 +250,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
     });
     controllers = new HashMap<File, ImageController>();
-    settings    = ApplicationSettings.getInstance();
+    settings = ApplicationSettings.getInstance();
     setPreferredSize(new Dimension(settings.getWidth(), settings.getHeight()));
     setOpaque(true);
     setBackground(Color.darkGray);
@@ -275,30 +284,44 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
       @Override
       public void mousePressed(MouseEvent e) {
-        // if(overlay.isInside(e.getPoint())) {
         for (Overlay o : overlays) {
           o.mousePressed(e);
         }
-        // }else{
+
+        for(Material m : materials) {
+          Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
+          if(r.contains(e.getPoint())) {
+            m.mouseDown(e);
+            e.consume();
+            break;
+          }
+        }
+        
         if(!e.isConsumed()) {
           handleMouseEvent(e);
         }
-        // }
 
         repaint();
       }
 
       @Override
       public void mouseReleased(MouseEvent e) {
-        // if (overlay.isInside(e.getPoint())) {
         for (Overlay o : overlays) {
-           o.mouseReleased(e);
+          o.mouseReleased(e);
         }
-        // } else {
+        
+        for(Material m : materials) {
+          Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
+          if(r.contains(e.getPoint())) {
+            m.mouseUp(e);
+            e.consume();
+            break;
+          }
+        }
+        
         if(!e.isConsumed()) {
           handleMouseEvent(e);
         }
-        // }
 
         repaint();
       }
@@ -317,6 +340,16 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         for (Overlay o : overlays) {
           o.mouseMoved(e);
         }
+        
+        for(Material m : materials) {
+          Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
+          if(r.contains(e.getPoint())) {
+            m.mouseDown(e);
+            e.consume();
+            break;
+          }
+        }
+        
         repaint();
       }
 
@@ -490,32 +523,27 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     drawBackground(g);
     ctrl.render(g);
     if(gridOn) {
-      drawGrid((Graphics2D) init);
+      drawGrid((Graphics2D) init.create());
     }
-//    if(preview && !animation) {
-//      drawPreview(init);
-//    }
-//    if(preview && animation) {
-//      drawAnimationPreview(init);
-//    }
+    // if(preview && !animation) {
+    // drawPreview(init);
+    // }
+    // if(preview && animation) {
+    // drawAnimationPreview(init);
+    // }
     g.dispose();
-    for (Overlay o : overlays) {
-      o.render((Graphics2D) init, this.getWidth(), this.getHeight());
+
+
+    for (Material m : materials) {
+      Graphics2D mG = (Graphics2D) init.create();
+      Material.draw(m, mG);
+      mG.dispose();
     }
   }
 
-
-//  private void drawPreview(Graphics init) {
-//    Graphics2D g = (Graphics2D) init.create();
-//
-//    Dimension imgSize = ctrl.getSize();
-//    g.setStroke(new BasicStroke(1));
-//    g.translate(getWidth() - Math.min(64, imgSize.width) - 1, 2);
-//    ctrl.render(g, Math.min(64, imgSize.width), Math.min(64, imgSize.height));
-//    g.setColor(Color.yellow.darker());
-//    g.drawRect(-1, -1, Math.min(64, imgSize.width + 1), Math.min(64, imgSize.height + 1));
-//    g.dispose();
-//  }
+  public void addMaterial(Material m) {
+    this.materials.add(m);
+  }
 
   public void setImageTransform(Graphics2D g) {
     Dimension d       = ctrl.getSize();
@@ -611,7 +639,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
    */
   public static void main(String[] args) {
     final Dimension imageSize = NewImagePanel.showAsDialog();
-    imageWidth  = imageSize.width;
+    imageWidth = imageSize.width;
     imageHeight = imageSize.height;
 
     SwingUtilities.invokeLater(new Runnable() {
@@ -693,7 +721,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
     frame2.add(tools, BorderLayout.NORTH);
 
-    overlays = new HashSet<Overlay>();
+    //pp.addMaterial(pp.getColorBarOverlayMaterial());
+    paletteMaterial = pp.getPaletteMaterial(paletteManager.get("default"));
+    pp.addMaterial(paletteMaterial);
     overlays.add(new ColorBarOverlay(tools, ctrl, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, ctrl, sprites));
     overlays.add(new ColorInfoOverlay(tools, pp, ctrl));
@@ -701,8 +731,77 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     overlays.add(new PreviewOverlay(tools, ctrl));
   }
 
+  public MaterialBuilder getBuilder() {
+    if(builder == null) {
+      builder = new MaterialBuilder(this);
+    }
+    return builder;
+  }
+
+  private Material getPaletteMaterial(ColorPalette palette) {
+    Color[]         colors     = palette.sort().getColors();
+    Set<String>     namesGroup = new HashSet<>();
+    MaterialBuilder b          = getBuilder();
+    b.push();
+    for (Color color : colors) {
+      String name = color.toString();
+      namesGroup.add(name);
+      b.push();
+      b.origin().background(color).fixedSize(40, 40).handleMouseUp((Material m, String aciton) -> {
+        PixelPainter.this.createAndSwitchBrush(color);
+      }).build(name);
+    }
+    b.push();
+    String names[] = namesGroup.toArray(new String[namesGroup.size()]);
+    int border = 5;
+    return b
+        .right(0.10f)
+        .minimumSize(45, 45)
+        .subtractBorder(34, border, border, border)
+        .roundedClip(10, 10)
+        .container(names)
+        .fixedWidth()
+        .fixedHeight()
+        .resizableComponents()
+        .build("PaletteMaterial");
+  }
+  
+  private void createAndSwitchBrush(Color color) {
+    Brush      brush   = ctrl.createColorBrush(color);
+    JToolBar   toolbar = this.tools;
+    Set<Brush> brushes = new HashSet<Brush>();
+    for (Component c : toolbar.getComponents()) {
+      if (c instanceof JButton) {
+        JButton but = (JButton) c;
+        if (but.getAction() instanceof BrushAction) {
+          BrushAction b = (BrushAction) but.getAction();
+          brushes.add(b.getBrush());
+        }
+      }
+    }
+    if (!brushes.contains(brush)) {
+      JButton but = toolbar.add(brush.createAsAction(ctrl));
+      but.setPreferredSize(PixelPainter.toolButtonSize);
+    }
+    toolbar.invalidate();
+    toolbar.repaint();
+
+    ctrl.setBrush(brush);
+    ctrl.setFillColor(color);
+  }
+
+  private Material getColorBarOverlayMaterial() {
+    if(this.colorbarMaterial == null) {
+      int border = 5;
+      this.colorbarMaterial = getBuilder().right(0.10f).minimumSize(45, 45).subtractBorder(34, border, border, border).roundedClip(10, 10)
+          .background(Color.red).build("colorbar");
+    }
+    return this.colorbarMaterial;
+  }
+
   public static void onExit(int closeOp) {
     frame.setVisible(false);
+    frame.dispose();
     if(closeOp == JFrame.EXIT_ON_CLOSE) {
       System.exit(0);
     }
@@ -1013,11 +1112,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     dlg.add(nfp);
     JPanel             pane = new JPanel(new GridBagLayout());
     GridBagConstraints c    = new GridBagConstraints();
-    c.anchor  = GridBagConstraints.EAST;
-    c.insets  = new Insets(5, 5, 5, 5);
-    c.fill    = GridBagConstraints.NONE;
+    c.anchor = GridBagConstraints.EAST;
+    c.insets = new Insets(5, 5, 5, 5);
+    c.fill = GridBagConstraints.NONE;
     c.weightx = 0.5;
-    c.gridx   = 0;
+    c.gridx = 0;
     JButton ok = new JButton("New");
     ok.addActionListener(new ActionListener() {
       @Override
@@ -1209,6 +1308,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         overlays.remove(old);
       }
       overlays.add(new ColorBarOverlay(tools, ctrl, palette));
+      materials.remove(paletteMaterial);
+      paletteMaterial = PixelPainter.this.getPaletteMaterial(palette);
+      materials.add(paletteMaterial);
     });
     JMenuItem paletteEdit = new JMenuItem("Edit...");
     paletteEdit.addActionListener(new ActionListener() {

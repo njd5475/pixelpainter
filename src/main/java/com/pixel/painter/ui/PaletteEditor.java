@@ -52,7 +52,7 @@ public class PaletteEditor extends JPanel {
   public static ColorPalette editPalette(Window w, PaletteManager paletteManager, String name) {
     ColorPalette cp = paletteManager.get(name);
     if (cp == null) {
-      cp = new ColorPalette();
+      cp = new ColorPalette(name);
     }
     JDialog dlg = new JDialog(w, "Editing " + name, ModalityType.APPLICATION_MODAL);
     PaletteEditor pe = new PaletteEditor(paletteManager, name, cp);

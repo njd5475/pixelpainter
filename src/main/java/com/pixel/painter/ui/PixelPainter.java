@@ -89,6 +89,7 @@ import com.pixel.painter.controller.SingleImageController;
 import com.pixel.painter.controller.SpriteController;
 import com.pixel.painter.model.ApplicationSettings;
 import com.pixel.painter.model.ColorPalette;
+import com.pixel.painter.palettes.FindPaletteWindow;
 import com.pixel.painter.palettes.PaletteListener;
 import com.pixel.painter.palettes.PaletteManager;
 import com.pixel.painter.settings.Json;
@@ -97,6 +98,7 @@ import com.pixel.painter.ui.dialog.NewFilePanel;
 import com.pixel.painter.ui.dialog.NewImagePanel;
 import com.pixel.painter.ui.materials.Material;
 import com.pixel.painter.ui.materials.MaterialBuilder;
+import com.pixel.painter.ui.materials.MaterialBuilderBase;
 import com.pixel.painter.ui.overlays.ColorInfoOverlay;
 import com.pixel.painter.ui.overlays.LayerOverlay;
 import com.pixel.painter.ui.overlays.Overlay;
@@ -210,7 +212,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     this.loadSavedPalettes(paletteManager);
     paletteManager.addPaletteListener(this);
     if(paletteManager.get("default") == null) {
-      paletteManager.addPalette("default", ColorPalette.createFrom(//
+      paletteManager.addPalette("default", ColorPalette.createFrom("default", //
           Color.green, Color.red, Color.blue, //
           Color.gray, Color.orange, Color.yellow, //
           Color.cyan, Color.pink, //
@@ -344,9 +346,13 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         for(Material m : materials) {
           Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
           if(r.contains(e.getPoint())) {
-            m.mouseDown(e);
+            m.setState("mouseOver");
+            m.mouseOver(e);
             e.consume();
             break;
+          }else if(m.isState("mouseOver")) {
+            m.setState("mouseOut");
+            m.mouseOut(e);
           }
         }
         
@@ -420,7 +426,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         Json.JsonObject obj = Json.parseFileObject(paletteFile);
 
         for (String paletteName : obj) {
-          ColorPalette cp     = new ColorPalette();
+          ColorPalette cp     = new ColorPalette(paletteName);
           String[]     colors = obj.getObject(paletteName).getStringArray("colors");
           for (String clStr : colors) {
             Color c = Color.decode(clStr);
@@ -733,7 +739,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
   public MaterialBuilder getBuilder() {
     if(builder == null) {
-      builder = new MaterialBuilder(this);
+      builder = new MaterialBuilderBase(this);
     }
     return builder;
   }
@@ -747,8 +753,14 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       String name = color.toString();
       namesGroup.add(name);
       b.push();
-      b.origin().background(color).fixedSize(40, 40).handleMouseUp((Material m, String aciton) -> {
+      b.origin().background(color).onState("over").background(Color.yellow).fixedSize(40, 40).handleMouseUp((Material m, String aciton) -> {
         PixelPainter.this.createAndSwitchBrush(color);
+      }).handleMouseMove((Material m, String action) -> {
+        m.setState("over");
+        PixelPainter.this.repaint();
+      }).handleMouseOut((Material m, String action) -> {
+        m.unsetState("over");
+        PixelPainter.this.repaint();
       }).build(name);
     }
     b.push();
@@ -929,11 +941,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     paletteEditor.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        painter.showPaletteEditorDialog(new PaletteEditor(paletteManager, "New Palette", new ColorPalette()));
+        painter.showPaletteEditorDialog(new PaletteEditor(paletteManager, "New Palette", new ColorPalette("New Palette")));
       }
     });
     paletteMenu.add(paletteEditor);
-    JMenuItem createPalette = new JMenuItem("Create Palette from Image");
+    paletteMenu.add(showRetrieveMenu(PixelPainter.paletteManager));
+    JMenuItem createPalette = new JMenuItem("Create from Image");
     createPalette.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -949,7 +962,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
             Graphics2D    g         = newFormat.createGraphics();
             g.drawImage(bImg, 0, 0, null);
             g.dispose();
-            ColorPalette palette  = ColorPalette.createFromImage(newFormat);
+            ColorPalette palette  = ColorPalette.createFromImage(file.getName(), newFormat);
             Color        colors[] = palette.getColors();
             System.out.println(colors.length);
             PalettePanel palettePane = new PalettePanel(palette);
@@ -971,7 +984,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
     });
     paletteMenu.add(createPalette);
-    JMenuItem newPalette = new JMenuItem(new AbstractAction("Create New Palette") {
+    JMenuItem newPalette = new JMenuItem(new AbstractAction("Create New") {
 
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -1038,6 +1051,17 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     menubar.add(view);
 
     frame2.setJMenuBar(menubar);
+  }
+
+  private static JMenuItem showRetrieveMenu(PaletteManager manager) {
+    JMenuItem retrieveMenu = new JMenuItem("Retrieve from Lospec");
+    retrieveMenu.addActionListener((ActionEvent e) -> {
+      FindPaletteWindow findPals = new FindPaletteWindow(frame, manager);
+      findPals.pack();
+      findPals.setLocationRelativeTo(frame);
+      findPals.setVisible(true);
+    });
+    return retrieveMenu;
   }
 
   protected void save() {
@@ -1256,7 +1280,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       FileInputStream fis;
       try {
         fis = new FileInputStream(file);
-        ColorPalette cp = ColorPalette.createFromPal(fis);
+        ColorPalette cp = ColorPalette.createFromPal(file.getName(), fis);
         paletteManager.addPalette(file.getName().substring(0, file.getName().lastIndexOf('.')), cp);
       } catch (FileNotFoundException e) {
         e.printStackTrace();

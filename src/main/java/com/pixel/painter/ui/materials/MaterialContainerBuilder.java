@@ -108,6 +108,41 @@ public class MaterialContainerBuilder {
         @Override
         public void mouseOver(MouseEvent e) {
           super.mouseOver(e);
+          if(!e.isConsumed()) {
+            boolean consume = false;
+            for (String name : componentNames) {
+              Material    m = MaterialContainerBuilder.this.parent.get(name);
+              Rectangle2D r = new Rectangle2D.Float(this.getX() + m.getX(), this.getY() + m.getY(), m.getWidth(),
+                  m.getHeight());
+              if(r.contains(e.getPoint())) {
+                m.setState("mouseContainerItemOver");
+                m.mouseOver(e);
+                consume = true;
+              }else if(m.isState("mouseContainerItemOver")) {
+                m.unsetState("mouseContainerItemOver");
+                m.mouseOut(e);
+              }
+            }
+            if(consume) {
+              e.consume();
+            }
+          }
+        }
+
+        @Override
+        public void mouseOut(MouseEvent e) {
+          super.mouseOut(e);
+          for (String name : componentNames) {
+            Material    m = MaterialContainerBuilder.this.parent.get(name);
+            Rectangle2D r = new Rectangle2D.Float(this.getX() + m.getX(), this.getY() + m.getY(), m.getWidth(),
+                m.getHeight());
+            if(!r.contains(e.getPoint())) {
+              if(m.isState("mouseContainerItemOver")) {
+                m.unsetState("mouseContainerItemOver");
+                m.mouseOut(e);
+              }
+            }
+          }
         }
 
         @Override
@@ -122,11 +157,11 @@ public class MaterialContainerBuilder {
         }
 
       };
-      final Dimension originalSize = new Dimension(40,40);
-      final Dimension compSize = new Dimension(40, 40);
+      final Dimension originalSize = new Dimension(40, 40);
+      final Dimension compSize     = new Dimension(40, 40);
       built.addRenderer((Graphics2D g, Material m) -> {
         g = (Graphics2D) g.create(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-        int maxY = 0;
+        int maxY      = 0;
         int maxHeight = 0;
         for (String compName : componentNames) {
           Material mat = MaterialContainerBuilder.this.parent.get(compName);
@@ -138,9 +173,10 @@ public class MaterialContainerBuilder {
           }
           maxHeight = Math.max(maxHeight, mat.getHeight());
         }
-        
-        if(maxY+(2*maxHeight) < m.getHeight()) {
-          compSize.setSize(Math.min(originalSize.getWidth(), compSize.getWidth()+1), Math.min(originalSize.getHeight(), compSize.getHeight()+1));
+
+        if(maxY + (2 * maxHeight) < m.getHeight()) {
+          compSize.setSize(Math.min(originalSize.getWidth(), compSize.getWidth() + 1),
+              Math.min(originalSize.getHeight(), compSize.getHeight() + 1));
         }
 
         g.dispose();
@@ -224,7 +260,7 @@ public class MaterialContainerBuilder {
           int newY = track.getY() + track.getHeight();
 
           if(newY > container.getHeight()) {
-            this.size.setSize(this.size.getWidth()-1, this.size.getHeight()-1);
+            this.size.setSize(this.size.getWidth() - 1, this.size.getHeight() - 1);
             this._fits = false;
           }
 

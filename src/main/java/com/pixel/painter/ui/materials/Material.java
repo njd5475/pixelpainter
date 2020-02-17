@@ -12,9 +12,9 @@ import javax.swing.JComponent;
 
 public class Material {
 
-  protected final Material                      parent;
+  protected final Material                            parent;
   protected final Map<String, MaterialRenderProperty> properties;
-  private List<Renderer>                        renderers;
+  private List<Renderer>                              renderers;
 
   protected Material(Material m) {
     this.parent = m;
@@ -53,9 +53,28 @@ public class Material {
       prop.apply(g, this);
     }
   }
+  
+  public boolean isState(String state) {
+    if(this.parent != null) {
+      return parent.isState(state);
+    }
+    return false;
+  }
+  
+  public void setState(String state) {
+    if(this.parent != null) {
+      this.parent.setState(state);
+    }
+  }
+  
+  public void unsetState(String state) {
+    if(this.parent != null) {
+      this.parent.unsetState(state);
+    }
+  }
 
   public MaterialBuilder derive() {
-    return new MaterialBuilder(this);
+    return new MaterialBuilderBase(this);
   }
 
   public int getX() {
@@ -84,6 +103,12 @@ public class Material {
       return 0;
     }
     return this.parent.getHeight();
+  }
+  
+  public void mouseOut(MouseEvent e) {
+    if(this.parent != null) {
+      this.parent.mouseOut(e);
+    }
   }
 
   public void mouseOver(MouseEvent e) {
@@ -121,10 +146,11 @@ public class Material {
       this.parent.keyUp();
     }
   }
-  
+
   /**
    * This way materials are all renderered from the same object instead of each.
    * Parent and each super class rendering itsself.
+   * 
    * @param m
    * @param g
    */
@@ -138,13 +164,33 @@ public class Material {
 
   public static Material getScreenFor(final JComponent c) {
     Material m = new Material(null) {
+      protected Map<String, Boolean> states = new HashMap<>();
+      
       public int getX() {
         return 0;
       }
 
       @Override
+      public boolean isState(String state) {
+        if(!states.containsKey(state)) {
+          return false;
+        }
+        return states.get(state);
+      }
+
+      @Override
       public int getY() {
         return 0;
+      }
+
+      @Override
+      public void setState(String state) {
+        states.put(state, true);
+      }
+
+      @Override
+      public void unsetState(String state) {
+        states.put(state, false);
       }
 
       @Override

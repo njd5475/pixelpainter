@@ -21,5 +21,9 @@ public class ColorProperty implements MaterialRenderProperty<Color> {
   public void apply(Graphics2D g, Material m) {
     g.setColor(this.color.generate(m));
   }
+
+  public Color getColor(Material m) {
+    return color.generate(m);
+  }
   
 }

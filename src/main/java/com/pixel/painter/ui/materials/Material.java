@@ -39,7 +39,7 @@ public class Material {
     properties.put(name, property);
   }
 
-  protected MaterialRenderProperty get(String name) {
+  public MaterialRenderProperty get(String name) {
     return properties.get(name);
   }
 

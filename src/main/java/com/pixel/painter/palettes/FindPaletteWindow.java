@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 import com.pixel.painter.model.ColorPalette;
+import com.pixel.painter.settings.Settings;
 
 public class FindPaletteWindow extends JDialog {
 
@@ -35,7 +36,7 @@ public class FindPaletteWindow extends JDialog {
     bar = new JProgressBar();
     bar.setIndeterminate(true);
     bar.setMinimumSize(new Dimension((int)(parent.getWidth()*0.75f), (int)(parent.getHeight()*0.2f)));
-    mainPanel.add(bar);
+    mainPanel.add(bar, BorderLayout.CENTER);
     
     this.thread = new Thread(() -> {
       ColorPalette[] retreive = RemotePalettes.retreive();
@@ -47,8 +48,8 @@ public class FindPaletteWindow extends JDialog {
   }
 
   private void consume(ColorPalette[] retreive) {
-    System.out.format("Got %d palettes back from lospec\n", retreive.length);
-    this.setTitle("Got %d palettes back from lospec");
+    String title = String.format("Got %d palettes back from lospec", retreive.length);
+    this.setTitle(title);
     this.thread = null;
     this.palettes = retreive;
     mainPanel.removeAll();
@@ -56,6 +57,7 @@ public class FindPaletteWindow extends JDialog {
     mainPanel.revalidate();
     for(ColorPalette cp : this.palettes) {
       JButton label = new JButton(cp.getName());
+      
       label.setForeground(Color.white);
       label.addActionListener((e) -> {
         manager.addPalette(cp.getName(), cp);

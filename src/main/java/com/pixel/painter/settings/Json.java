@@ -7,20 +7,15 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Array;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-
-import com.pixel.painter.settings.Json.JsonObject;
-
-import java.util.LinkedHashMap;
 
 public final class Json {
 
@@ -158,8 +153,7 @@ public final class Json {
       return Type.UNKNOWN;
     }
   }
-
-  @SuppressWarnings("serial")
+  
   public static class TokenError extends Error {
     public TokenError(String err) {
       super(err);
@@ -173,11 +167,29 @@ public final class Json {
       super("Error: Unexpected end of stream, expected " + expected.name());
     }
   }
+  
+  public static class TokenStreamEmptyError extends Error {
+    public TokenStreamEmptyError(String err) {
+      super(err);
+    }
+
+    public TokenStreamEmptyError(Token t, Type t2) {
+      super("Error: Stream ended unxpectedly: " + t.toString() + " expected " + t2.name());
+    }
+
+    public TokenStreamEmptyError(Type expected) {
+      super("Error: Stream ended unxpectedly, expected " + expected.name());
+    }
+  }
 
   private static String concateTill(List<Token> tokens, Type... t) {
     StringBuilder all = new StringBuilder("");
-    while (!tokens.get(0).isOneOf(t)) {
-      all.append(tokens.remove(0).getContents());
+    try {
+      while (!tokens.get(0).isOneOf(t)) {
+        all.append(tokens.remove(0).getContents());
+      }
+    } catch (IndexOutOfBoundsException ioobe) {
+      // we must have reached the end of the stream so we should return what we have.
     }
     return all.toString();
   }
@@ -188,7 +200,8 @@ public final class Json {
     } else if(!tokens.isEmpty()) {
       throw new TokenError(tokens.get(0), t);
     } else {
-      throw new TokenError(t);
+      // the tokens are empty so we expected one but didn't get it
+      throw new TokenStreamEmptyError(t);
     }
   }
 
@@ -214,12 +227,16 @@ public final class Json {
       throw new TokenError("Object contents");
     }
     ignoreWhitespace(tokens);
-    while (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
-      objectField(tokens, obj);
-      ignoreWhitespace(tokens);
-      if(!tokens.get(0).is(Type.CLOSE_OBJECT)) {
-        expect(tokens, Type.OBJECT_SEPARATOR);
+    try {
+      while (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
+        objectField(tokens, obj);
+        ignoreWhitespace(tokens);
+        if(!tokens.get(0).is(Type.CLOSE_OBJECT)) {
+          expect(tokens, Type.OBJECT_SEPARATOR);
+        }
       }
+    } catch (IndexOutOfBoundsException ioobe) {
+      // we must have reached the end of the stream
     }
     return obj;
   }
@@ -258,24 +275,28 @@ public final class Json {
     }
     return o;
   }
-  
+
   public static String string(List<Token> tokens, boolean singleQuote) {
     Type quote = singleQuote ? Type.SINGLE_QUOTE : Type.DOUBLE_QUOTE;
     expect(tokens, quote);
     StringBuilder builder = new StringBuilder();
     boolean       cont    = false;
-    do {
-      cont = false;
-      String all = concateTill(tokens, Type.STRING_ESCAPE, quote);
-      builder.append(all);
-      if(tokens.get(0).is(Type.STRING_ESCAPE)) {
-        tokens.remove(0);
-        builder.append('\\');
-        builder.append(tokens.remove(0).getContents());
-        cont = true;
-      }
-    } while (cont);
-    expect(tokens, quote);
+    try {
+      do {
+        cont = false;
+        String all = concateTill(tokens, Type.STRING_ESCAPE, quote);
+        builder.append(all);
+        if(tokens.get(0).is(Type.STRING_ESCAPE)) {
+          tokens.remove(0);
+          builder.append('\\');
+          builder.append(tokens.remove(0).getContents());
+          cont = true;
+        }
+      } while (cont);
+      expect(tokens, quote);
+    } catch (IndexOutOfBoundsException ioobe) {
+      // we must have reached the end of the stream
+    }
     return builder.toString();
   }
 
@@ -389,7 +410,11 @@ public final class Json {
     expect(tokens, Type.OPEN_OBJECT);
     Map<String, Object> newObj = objectContents(tokens, new LinkedHashMap<String, Object>());
     ignoreWhitespace(tokens);
-    expect(tokens, Type.CLOSE_OBJECT);
+    try {
+      expect(tokens, Type.CLOSE_OBJECT);
+    } catch (IndexOutOfBoundsException | TokenStreamEmptyError ioobe) {
+      // we must have reached the end of the stream
+    }
     ignoreWhitespace(tokens);
     return newObj;
   }

@@ -96,11 +96,13 @@ import com.pixel.painter.settings.Json;
 import com.pixel.painter.settings.Settings;
 import com.pixel.painter.ui.dialog.NewFilePanel;
 import com.pixel.painter.ui.dialog.NewImagePanel;
+import com.pixel.painter.ui.materials.ChainRenderProperty;
 import com.pixel.painter.ui.materials.ColorProperty;
 import com.pixel.painter.ui.materials.Material;
 import com.pixel.painter.ui.materials.MaterialActionHandler;
 import com.pixel.painter.ui.materials.MaterialBuilder;
 import com.pixel.painter.ui.materials.MaterialBuilderBase;
+import com.pixel.painter.ui.materials.MaterialRenderProperty;
 import com.pixel.painter.ui.overlays.ColorInfoOverlay;
 import com.pixel.painter.ui.overlays.LayerOverlay;
 import com.pixel.painter.ui.overlays.Overlay;
@@ -212,7 +214,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     materials = new HashSet<>();
     modifyListeners = new HashSet<ModifyListener>();
     ctrl.addBrushChangeListener(this);
-    this.loadSavedPalettes(paletteManager);
+    paletteManager = PaletteManager.loadSavedPalettes(paletteManager);
     paletteManager.addPaletteListener(this);
     if(paletteManager.get("default") == null) {
       paletteManager.addPalette("default", ColorPalette.createFrom("default", //
@@ -419,28 +421,6 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     });
 
     getFontAwesome();
-  }
-
-  private void loadSavedPalettes(PaletteManager pm) {
-    File paletteFile = new File(Settings.getInstance().settingsDir(), "palettes.json");
-
-    if(paletteFile.exists()) {
-      try {
-        Json.JsonObject obj = Json.parseFileObject(paletteFile);
-
-        for (String paletteName : obj) {
-          ColorPalette cp     = new ColorPalette(paletteName);
-          String[]     colors = obj.getObject(paletteName).getStringArray("colors");
-          for (String clStr : colors) {
-            Color c = Color.decode(clStr);
-            cp.addColor(c);
-          }
-          pm.addPalette(paletteName, cp);
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
   }
 
   private void scaleToFit() {
@@ -735,8 +715,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     // b.handleMouseOut();
     paletteMaterial = PixelPainter.getPaletteMaterial(paletteManager.get("default"), pp.getBuilder(),
         (Material m, String action) -> {
-          ColorProperty crp = (ColorProperty) m.get("color");
-          pp.createAndSwitchBrush(crp.getColor(m));
+          ColorProperty colorProperty = (ColorProperty) m.getUpChain("brush-color");
+          pp.createAndSwitchBrush(colorProperty.getColor(m));
         }, (Material m, String action) -> {
           m.setState("over");
           pp.repaint();
@@ -745,6 +725,13 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           pp.repaint();
         });
     pp.addMaterial(paletteMaterial);
+    Material layers = pp.getBuilder()
+        .push()
+        .fixedSize(100, 100)
+        .background(Color.blue)
+        .text("Hello World!", Color.black)
+        .build("Layer");
+    pp.addMaterial(layers);
     overlays.add(new ColorBarOverlay(tools, ctrl, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, ctrl, sprites));
     overlays.add(new ColorInfoOverlay(tools, pp, ctrl));
@@ -759,37 +746,41 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     return builder;
   }
 
-  private static Material getPaletteMaterial(ColorPalette palette, MaterialBuilder b, MaterialActionHandler mouseAction,
+  public static Material getColorMaterial(MaterialBuilder b, String name, Color color,
+      MaterialActionHandler mouseAction, MaterialActionHandler mouseMove, MaterialActionHandler mouseOut) {
+    b.push();
+    b.origin().addColorProperty("brush-color", color).background(color).onState("over").background(Color.yellow).fixedSize(40, 40);
+
+    if(mouseAction != null) {
+      b.handleMouseUp(mouseAction);
+    }
+
+    if(mouseMove != null) {
+      b.handleMouseMove(mouseMove);
+    }
+
+    if(mouseOut != null) {
+      b.handleMouseOut(mouseOut);
+    }
+    return b.build(name);
+  }
+
+  public static Material getPaletteMaterial(ColorPalette palette, MaterialBuilder b, MaterialActionHandler mouseAction,
       MaterialActionHandler mouseMove, MaterialActionHandler mouseOut) {
     Color[]     colors     = palette.sort().getColors();
     Set<String> namesGroup = new HashSet<>();
-    // MaterialBuilder b = getBuilder();
     b.push();
     for (Color color : colors) {
-      String name = color.toString();
-      namesGroup.add(name);
-      b.push();
-      b.origin().background(color).onState("over").background(Color.yellow).fixedSize(40, 40);
-
-      if(mouseAction != null) {
-        b.handleMouseUp(mouseAction);
-      }
-
-      if(mouseMove != null) {
-        b.handleMouseMove(mouseMove);
-      }
-
-      if(mouseOut != null) {
-        b.handleMouseOut(mouseOut);
-      }
-      b.build(name);
+      namesGroup.add(color.toString());
+      getColorMaterial(b, color.toString(), color, mouseAction, mouseMove, mouseOut);
     }
     b.push();
 
     String names[] = namesGroup.toArray(new String[namesGroup.size()]);
     int    border  = 5;
-    return b.right(0.10f) //
-        .minimumSize(45, 45) //
+    return b
+        .right(0.20f) //
+        .minimumSize(42, 45) //
         .subtractBorder(34, border, border, border) //
         .roundedClip(10, 10) //
         .container(names) //
@@ -1356,7 +1347,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       overlays.add(new ColorBarOverlay(tools, ctrl, palette));
       materials.remove(paletteMaterial);
       paletteMaterial = PixelPainter.getPaletteMaterial(palette, this.getBuilder(), (Material m, String action) -> {
-        ColorProperty crp = (ColorProperty) m.get("color");
+        ColorProperty crp = (ColorProperty) m.getUpChain("brush-color");
         PixelPainter.this.createAndSwitchBrush(crp.getColor(m));
       }, (Material m, String action) -> {
         m.setState("over");
@@ -1366,6 +1357,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         PixelPainter.this.repaint();
       });
       materials.add(paletteMaterial);
+      this.repaint();
     });
     JMenuItem paletteEdit = new JMenuItem("Edit...");
     paletteEdit.addActionListener(new ActionListener() {

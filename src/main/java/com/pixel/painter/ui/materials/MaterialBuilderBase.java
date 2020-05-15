@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -40,6 +41,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
     if(beingBuilt == null) {
       beingBuilt = new Material(root);
     }
+    Collections.reverse(renderFunctions);
     while (!renderFunctions.empty()) {
       Renderer cur = renderFunctions.pop();
       beingBuilt.addRenderer(cur);
@@ -70,6 +72,10 @@ public class MaterialBuilderBase implements MaterialBuilder {
 
     };
     return this;
+  }
+  
+  protected JComponent getRootComponent() {
+    return rootComp;
   }
 
   protected void addRenderer(String state, Renderer renderer) {
@@ -108,6 +114,21 @@ public class MaterialBuilderBase implements MaterialBuilder {
     setProperty("color", new ColorProperty(background), state);
     return this;
   }
+  
+  @Override
+  public MaterialBuilder text(String str, Color color) {
+    String state = null;
+    if(!this.states.empty()) {
+      state = this.states.pop();
+    }
+    addRenderer(state, (Graphics2D g, Material m) -> {
+      Color old = g.getColor();
+      g.setColor(color);
+      g.drawString(str, m.getX(), m.getY() + m.getHeight());
+      g.setColor(old);
+    });
+    return this;
+  }
 
   @Override
   public MaterialBuilder subtractBorder(int north, int south, int east, int west) {
@@ -144,6 +165,24 @@ public class MaterialBuilderBase implements MaterialBuilder {
       @Override
       public int getX() {
         return parent.getX() + (int) (parent.getWidth() - (parent.getWidth() * percentage));
+      }
+
+      @Override
+      public int getWidth() {
+        return (int) (parent.getWidth() * percentage);
+      }
+
+    };
+    return this;
+  }
+  
+  @Override
+  public MaterialBuilder left(float percentage) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+
+      @Override
+      public int getX() {
+        return parent.getX();
       }
 
       @Override
@@ -262,6 +301,25 @@ public class MaterialBuilderBase implements MaterialBuilder {
       @Override
       public int getHeight() {
         return Math.max(height, super.getHeight());
+      }
+
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder addColorProperty(String name, Color color) {
+    this.beingBuilt.put(name, new ColorProperty(color));
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder snapToRight() {
+    this.beingBuilt = new Material(this.beingBuilt) {
+
+      @Override
+      public int getX() {
+        return (parent.getX() + parent.getWidth()) - this.getWidth();
       }
 
     };

@@ -1,11 +1,15 @@
 package com.pixel.painter.palettes;
 
+import java.awt.Color;
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.pixel.painter.model.ColorPalette;
+import com.pixel.painter.settings.Json;
+import com.pixel.painter.settings.Settings;
 
 public class PaletteManager {
 
@@ -44,4 +48,33 @@ public class PaletteManager {
     return palettes.entrySet();
   }
 
+  public static PaletteManager loadSavedPalettes(PaletteManager pm) {
+    if(pm == null) {
+      pm = new PaletteManager();
+    }
+    File paletteFile = new File(Settings.getInstance().settingsDir(), "palettes.json");
+
+    if(paletteFile.exists()) {
+      try {
+        Json.JsonObject obj = Json.parseFileObject(paletteFile);
+
+        for (String paletteName : obj) {
+          ColorPalette cp     = new ColorPalette(paletteName);
+          String[]     colors = obj.getObject(paletteName).getStringArray("colors");
+          for (String clStr : colors) {
+            Color c = Color.decode(clStr);
+            cp.addColor(c);
+          }
+          pm.addPalette(paletteName, cp);
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    return pm;
+  }
+
+  public static PaletteManager loadSavedPalettes() {
+    return loadSavedPalettes(null);
+  }
 }

@@ -12,6 +12,10 @@ public class ChainRenderProperty<T> implements MaterialRenderProperty<T> {
     this.next = next;
   }
   
+  public MaterialRenderProperty<T> getProperty() {
+    return property;
+  }
+  
   @Override
   public void apply(Graphics2D g, Material m) {
     next.apply(g, m);

@@ -10,11 +10,17 @@ public interface MaterialBuilder {
 
   MaterialBuilder onState(String state);
 
+  MaterialBuilder text(String text, Color black);
+  
   MaterialBuilder background(Color background);
 
   MaterialBuilder subtractBorder(int north, int south, int east, int west);
 
   MaterialBuilder right(float percentage);
+  
+  MaterialBuilder left(float percentage);
+  
+  MaterialBuilder snapToRight();
 
   MaterialBuilder fixedSize(int width, int height);
 
@@ -39,5 +45,7 @@ public interface MaterialBuilder {
   MaterialBuilder minimumSize(int width, int height);
 
   Material getRoot();
+
+  MaterialBuilder addColorProperty(String string, Color color);
 
 }

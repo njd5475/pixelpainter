@@ -182,14 +182,15 @@ public class MaterialContainerBuilder {
         g.dispose();
       });
       if(resizeComponents) {
-        Material m = this.parent.get(componentNames.iterator().next());
-        rebuildComponentsWithResizing(this.built, compSize);
+        rebuildComponentsWithResizing(name, this.built, compSize);
+      }else {
+
       }
     }
     return built;
   }
 
-  private void rebuildComponentsWithResizing(final Material built2, Dimension componentSize) {
+  private void rebuildComponentsWithResizing(String parentName, final Material built2, Dimension componentSize) {
     System.out.println("How many times do we rebuild");
     String last = null;
     this.revertComponents();
@@ -284,4 +285,5 @@ public class MaterialContainerBuilder {
       return (int) size.getHeight();
     }
   }
+  
 }

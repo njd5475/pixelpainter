@@ -38,6 +38,14 @@ public class Material {
   protected void put(String name, MaterialRenderProperty property) {
     properties.put(name, property);
   }
+  
+  public MaterialRenderProperty getUpChain(String name) {
+    MaterialRenderProperty p = properties.get(name);
+    if(p == null) {
+      p = parent.getUpChain(name);
+    }
+    return p;
+  }
 
   public MaterialRenderProperty get(String name) {
     return properties.get(name);

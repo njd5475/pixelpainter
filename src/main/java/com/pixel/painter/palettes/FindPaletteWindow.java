@@ -4,15 +4,23 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
 import com.pixel.painter.model.ColorPalette;
-import com.pixel.painter.settings.Settings;
+import com.pixel.painter.ui.MaterialComponentBuilder;
+import com.pixel.painter.ui.PixelPainter;
+import com.pixel.painter.ui.materials.Material;
+import com.pixel.painter.ui.materials.MaterialActionHandler;
+import com.pixel.painter.ui.materials.MaterialBuilder;
+import com.pixel.painter.ui.materials.MaterialBuilderBase;
 
 public class FindPaletteWindow extends JDialog {
 
@@ -57,8 +65,12 @@ public class FindPaletteWindow extends JDialog {
     mainPanel.revalidate();
     for(ColorPalette cp : this.palettes) {
       JButton label = new JButton(cp.getName());
-      
-      label.setForeground(Color.white);
+      label.setLayout(new BorderLayout());
+      Dimension butSize = new Dimension((int)(mainPanel.getWidth() * 0.95f), 45);
+      label.setSize(butSize);
+      label.setMinimumSize(butSize);
+      label.setPreferredSize(butSize);
+      label.add(buildPaletteComponent(label, cp));
       label.addActionListener((e) -> {
         manager.addPalette(cp.getName(), cp);
       });
@@ -69,5 +81,25 @@ public class FindPaletteWindow extends JDialog {
     this.repaint();
   }
   
+  private JComponent buildPaletteComponent(JComponent comp, ColorPalette cp) {
+
+    MaterialComponentBuilder builder    = new MaterialComponentBuilder(comp);
+    MaterialBuilder          matBuilder = new MaterialBuilderBase(comp);
+
+    Color[]               colors = cp.getColors();
+    MaterialActionHandler noop   = (m, s) -> {};
+    
+    Set<String>           group  = new HashSet<>();
+    for (Color color : colors) {
+      String name = color.toString();
+      PixelPainter.getColorMaterial(matBuilder, name, color, noop, noop, noop);
+      group.add(name);
+    }
+
+    String   names[]   = group.toArray(new String[group.size()]);
+    matBuilder.push();
+    Material matColors = matBuilder.left(1.0f).container(names).resizableComponents().build("PaletteMaterial");
+    return builder.wrap(matColors);
+  }
   
 }

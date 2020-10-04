@@ -57,6 +57,7 @@ import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -69,6 +70,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -199,6 +201,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private Set<ModifyListener>    modifyListeners;
   private Material               colorbarMaterial;
   private MaterialBuilder        builder;
+  private JMenu recentsMenu;
   private static Set<Overlay>    overlays;
   private static Set<Material>   materials;
   private static PreviewAnimator animator;
@@ -869,6 +872,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     file.add(newImage);
     file.addSeparator();
     file.add(open);
+    file.add(buildRecents(painter));
     file.addSeparator();
     file.add(save);
     file.addSeparator();
@@ -1057,6 +1061,27 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     menubar.add(view);
 
     frame2.setJMenuBar(menubar);
+  }
+
+  private static JMenuItem buildRecents(PixelPainter painter) {
+    JMenu recentsMenu = painter.recentsMenu; 
+    if(recentsMenu == null) {
+      painter.recentsMenu = recentsMenu = new JMenu("Recents");
+    }
+    recentsMenu.removeAll();
+    for(File file : Settings.getInstance().getRecentFiles()) {
+      String name = String.format("%s - %s", file.getName(), file.getParent());
+      
+      recentsMenu.add(new AbstractAction(name) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          painter.openNewFile(file);
+        }     
+      });
+    }
+    recentsMenu.validate();
+    
+    return recentsMenu;
   }
 
   private static JMenuItem showRetrieveMenu(PaletteManager manager) {
@@ -1298,7 +1323,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         ImageController newCtrl = SingleImageController.createNewInstance(file);
         this.changeImageController(newCtrl, file);
         controllers.put(file, newCtrl);
-
+        
         // reload all the image lists
         imageMenu.removeAll();
         imageMenu.setEnabled(!controllers.isEmpty());
@@ -1315,6 +1340,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           imageMenu.add(menuItem);
         }
         imageMenu.validate();
+        Settings.getInstance().addRecentFile(file);
+        buildRecents(this);
         this.file = file;
       } catch (IOException e1) {
         e1.printStackTrace();

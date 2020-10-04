@@ -589,6 +589,26 @@ public final class Json {
       LinkedList<String> strs = (LinkedList<String>) wrap.get(key);
       return strs.toArray(new String[strs.size()]);
     }
+    
+    public JsonObject[] getObjectArray(String key) {
+      List<Object> elements = (List<Object>) wrap.get(key);
+      List<JsonObject> asJobjs = new LinkedList<JsonObject>();
+      
+      for(Object o : elements) {
+        asJobjs.add(new JsonObject((Map<String, Object>) o));
+      }
+      
+      return asJobjs.toArray(new JsonObject[asJobjs.size()]);
+    }
+
+    public Object[] getMixedArray(String key) {
+      List<Object> elements = (List<Object>) wrap.get(key);
+      return elements.toArray(new Object[elements.size()]);
+    }
+    
+    public void putStringArray(String string, List<String> recents) {
+      wrap.put(string, recents);
+    }
   }
 
 }

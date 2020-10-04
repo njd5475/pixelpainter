@@ -445,16 +445,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     // set the new image controller to have all the modify listeners that
     // the old one had
     ctrl.addAllModifyListeners(modifyListeners);
-
-    for (Overlay o : overlays) {
-      o.changeControllers(ctrl);
-    }
-    resetToolbar();
   }
 
-  private void resetToolbar() {
-
-  }
 
   private void handleMouseEvent(MouseEvent e) {
     if(e.getID() == MouseEvent.MOUSE_PRESSED) {
@@ -695,19 +687,20 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     System.out.println("Font info: " + fm.getLeading() + " ");
     toolButtonSize = new Dimension(2 * fm.getMaxAdvance(),
         fm.getLeading() + fm.getMaxAscent() + fm.getHeight() + fm.getMaxDescent());
-    JButton erase = tools.add(allBrushes.get("EraseBrush").createAsAction(ctrl));
+    JButton erase = tools.add(allBrushes.get("EraseBrush").createAsAction(pp));
     erase.setFont(f);
     erase.setForeground(Color.black);
     erase.setPreferredSize(toolButtonSize);
     erase.setToolTipText("Eraser");
 
-    JButton but = tools.add(allBrushes.get("FillMode").createAsAction(ctrl));
+    JButton but = tools.add(allBrushes.get("FillMode").createAsAction(pp));
     but.setFont(f);
     but.setPreferredSize(toolButtonSize);
     but.setForeground(Color.blue);
     but.setToolTipText("Bucket Fill");
 
     frame2.add(tools, BorderLayout.NORTH);
+    frame2.revalidate();
 
     // pp.addMaterial(pp.getColorBarOverlayMaterial());
     // b.handleMouseUp();
@@ -732,11 +725,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         .text("Hello World!", Color.black)
         .build("Layer");
     pp.addMaterial(layers);
-    overlays.add(new ColorBarOverlay(tools, ctrl, paletteManager.get("default")));
-    overlays.add(new SpriteFrameBarOverlay(tools, ctrl, sprites));
-    overlays.add(new ColorInfoOverlay(tools, pp, ctrl));
-    overlays.add(new LayerOverlay(tools, pp, ctrl));
-    overlays.add(new PreviewOverlay(tools, ctrl));
+    overlays.add(new ColorBarOverlay(tools, pp, paletteManager.get("default")));
+    overlays.add(new SpriteFrameBarOverlay(tools, pp, sprites));
+    overlays.add(new ColorInfoOverlay(tools, pp));
+    overlays.add(new LayerOverlay(tools, pp));
+    overlays.add(new PreviewOverlay(tools, pp));
   }
 
   public MaterialBuilder getBuilder() {
@@ -804,7 +797,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
     }
     if(!brushes.contains(brush)) {
-      JButton but = toolbar.add(brush.createAsAction(ctrl));
+      JButton but = toolbar.add(brush.createAsAction(this));
       but.setPreferredSize(PixelPainter.toolButtonSize);
     }
     toolbar.invalidate();
@@ -985,7 +978,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
                 Color color = (Color) evt.getNewValue();
 
                 Brush brush = painter.getController().createColorBrush(color);
-                tools.add(brush.createAsAction(painter.getController()));
+                tools.add(brush.createAsAction(painter));
                 painter.getController().setBrush(brush);
               }
             });
@@ -1344,7 +1337,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       if(old != null) {
         overlays.remove(old);
       }
-      overlays.add(new ColorBarOverlay(tools, ctrl, palette));
+      overlays.add(new ColorBarOverlay(tools, this, palette));
       materials.remove(paletteMaterial);
       paletteMaterial = PixelPainter.getPaletteMaterial(palette, this.getBuilder(), (Material m, String action) -> {
         ColorProperty crp = (ColorProperty) m.getUpChain("brush-color");

@@ -27,8 +27,8 @@ public class ColorInfoOverlay extends Overlay {
   private boolean      greenSelected = false;
   private boolean      alphaSelected = false;
 
-  public ColorInfoOverlay(JToolBar toolbar, PixelPainter painter, ImageController ctrl) {
-    super(toolbar, ctrl);
+  public ColorInfoOverlay(JToolBar toolbar, PixelPainter painter) {
+    super(toolbar, painter);
     this.viewer = painter;
   }
 
@@ -50,7 +50,7 @@ public class ColorInfoOverlay extends Overlay {
       // viewer.translateToImage(inImage);
       viewer.setImageTransform(inImage);
       inImage.setColor(new Color(255, 0, 255, 50));
-      for(Point p : allColors) {
+      for (Point p : allColors) {
         inImage.fillRect(p.x, p.y, 1, 1);
       }
       inImage.dispose();
@@ -91,14 +91,18 @@ public class ColorInfoOverlay extends Overlay {
 
     // image point
     Point pt = viewer.getPointInImage(e.getX(), e.getY());
-    if (pt != null && pt.x > 0 && pt.y > 0 && pt.x < ctrl.getSize().width && pt.y < ctrl.getSize().height) {
-      int color = ctrl.getImage().getRGB(pt.x, pt.y);
-      final int mask = 0x000000FF;
-      blue = color & mask;
-      green = (color >> 8) & mask;
-      red = (color >> 16) & mask;
-      alpha = (color >> 24) & mask;
-      allColors = ctrl.getAll(red, green, blue, alpha);
+    if (pt != null && pt.x > 0 && pt.y > 0 && pt.x < pp.getSize().width && pt.y < pp.getSize().height) {
+      try {
+        int color = pp.getImageController().getImage().getRGB(pt.x, pt.y);
+        final int mask = 0x000000FF;
+        blue = color & mask;
+        green = (color >> 8) & mask;
+        red = (color >> 16) & mask;
+        alpha = (color >> 24) & mask;
+        allColors = pp.getImageController().getAll(red, green, blue, alpha);
+      } catch (ArrayIndexOutOfBoundsException aioobe) {
+
+      }
     } else {
       allColors = null;
     }
@@ -109,9 +113,9 @@ public class ColorInfoOverlay extends Overlay {
   @Override
   public void mouseWheel(MouseWheelEvent mwe) {
     Point pt = viewer.getPointInImage(mwe.getX(), mwe.getY());
-    if (pt != null && pt.x > 0 && pt.y > 0 && pt.x < ctrl.getSize().width && pt.y < ctrl.getSize().height
+    if (pt != null && pt.x > 0 && pt.y > 0 && pt.x < pp.getSize().width && pt.y < pp.getSize().height
         && mwe.isControlDown()) {
-      int color = ctrl.getImage().getRGB(pt.x, pt.y);
+      int color = pp.getImageController().getImage().getRGB(pt.x, pt.y);
       final int mask = 0x000000FF;
       blue = color & mask;
       green = (color >> 8) & mask;
@@ -132,9 +136,9 @@ public class ColorInfoOverlay extends Overlay {
       }
 
       if (!mwe.isShiftDown()) {
-        ctrl.setColorAt(pt.x, pt.y, new Color(red, green, blue, alpha));
+        pp.getImageController().setColorAt(pt.x, pt.y, new Color(red, green, blue, alpha));
       } else {
-        ctrl.setAllColorsAt(pt.x, pt.y, new Color(red, green, blue, alpha));
+        pp.getImageController().setAllColorsAt(pt.x, pt.y, new Color(red, green, blue, alpha));
       }
       mwe.consume();
     }

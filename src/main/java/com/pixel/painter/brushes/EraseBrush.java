@@ -8,6 +8,7 @@ import javax.swing.Action;
 import com.pixel.painter.brushes.undoables.BrushUndoable;
 import com.pixel.painter.brushes.undoables.SinglePixelEdit;
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.ui.PixelPainter;
 
 public class EraseBrush extends Brush {
 
@@ -18,8 +19,9 @@ public class EraseBrush extends Brush {
     this.eraseUnicode = "\uf12d";
   }
 
-  public Action createAsAction(ImageController ctrl) {
-    return new BrushAction(eraseUnicode, getIcon(), ctrl, this);
+  @Override
+  public Action createAsAction(PixelPainter pp) {
+    return new BrushAction(eraseUnicode, getIcon(), pp, this);
   }
 
   @Override

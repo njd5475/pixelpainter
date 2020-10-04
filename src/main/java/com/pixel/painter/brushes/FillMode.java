@@ -13,6 +13,7 @@ import javax.swing.Action;
 import com.pixel.painter.brushes.undoables.BrushUndoable;
 import com.pixel.painter.brushes.undoables.FillModeBrushUndoable;
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.ui.PixelPainter;
 
 public class FillMode extends Brush {
 
@@ -23,8 +24,9 @@ public class FillMode extends Brush {
     this.unicodeIcon = "\uf576";
   }
 
-  public Action createAsAction(ImageController ctrl) {
-    return new BrushAction(unicodeIcon, getIcon(), ctrl, this);
+  @Override
+  public Action createAsAction(PixelPainter pp) {
+    return new BrushAction(unicodeIcon, getIcon(), pp, this);
   }
 
   @Override

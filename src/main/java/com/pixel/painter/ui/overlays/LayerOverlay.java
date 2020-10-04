@@ -33,9 +33,9 @@ public class LayerOverlay extends Overlay {
   private Font              font;
   private FontRenderContext fontRenderContext;
 
-  public LayerOverlay(JToolBar toolbar, PixelPainter viewer, ImageController ctrl) {
-    super(toolbar, ctrl);
-    this.layerCtrl.addLayer(ctrl);
+  public LayerOverlay(JToolBar toolbar, PixelPainter viewer) {
+    super(toolbar, viewer);
+    this.layerCtrl.addLayer(viewer.getImageController());
     this.viewer            = viewer;
     this.myHeight          = 20;
     this.myWidth           = 0;
@@ -110,7 +110,7 @@ public class LayerOverlay extends Overlay {
     super.mouseReleased(e);
     if(getPlusBounds().contains(e.getX(), e.getY())) {
       layerCtrl.addLayer(new SingleImageController(
-          new BufferedImage(ctrl.getImage().getWidth(), ctrl.getImage().getHeight(), BufferedImage.TYPE_INT_ARGB),
+          new BufferedImage(pp.getImageController().getImage().getWidth(), pp.getImageController().getImage().getHeight(), BufferedImage.TYPE_INT_ARGB),
           true));
       if(viewer.getImageController() != layerCtrl) {
         viewer.changeImageController(layerCtrl, viewer.getCurrentFile());

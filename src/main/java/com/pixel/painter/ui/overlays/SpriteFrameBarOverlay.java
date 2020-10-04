@@ -13,6 +13,7 @@ import javax.swing.JToolBar;
 
 import com.pixel.painter.controller.ImageController;
 import com.pixel.painter.controller.SpriteController;
+import com.pixel.painter.ui.PixelPainter;
 
 public class SpriteFrameBarOverlay extends Overlay {
 
@@ -20,8 +21,8 @@ public class SpriteFrameBarOverlay extends Overlay {
   private Integer            selectedIndex;
   private Rectangle2D.Double spritePreview;
 
-  public SpriteFrameBarOverlay(JToolBar toolbar, ImageController ctrl, SpriteController sprites) {
-    super(toolbar, ctrl);
+  public SpriteFrameBarOverlay(JToolBar toolbar, PixelPainter pp, SpriteController sprites) {
+    super(toolbar, pp);
     this.spritesCtrl = sprites;
   }
 
@@ -82,9 +83,9 @@ public class SpriteFrameBarOverlay extends Overlay {
     if(highlight && performMouseOp) {
       spritePreview = new Rectangle2D.Double(butRect.x + 2 * (imageWidth + offset), butRect.y, imageWidth, imageHeight);
       if(spritesCtrl.getFrameCount() == 0) {
-        spritesCtrl.createNewImage(ctrl.getImage());
+        spritesCtrl.createNewImage(pp.getImageController().getImage());
       } else {
-        BufferedImage image = ctrl.getImage();
+        BufferedImage image = pp.getImageController().getImage();
         spritesCtrl.createNewImage(deepCopy(image));
       }
       spritesCtrl.changeImage(spritesCtrl.getFrameCount());

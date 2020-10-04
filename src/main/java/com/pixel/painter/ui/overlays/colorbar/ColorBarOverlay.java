@@ -39,8 +39,8 @@ public class ColorBarOverlay extends Overlay {
   private final Set<Color>              colors;
   private Map<Color, List<ColorButton>> selectedVariants         = new HashMap<>();
   
-  public ColorBarOverlay(JToolBar toolbar, ImageController ctrl, ColorPalette palette) {
-    super(toolbar, ctrl);
+  public ColorBarOverlay(JToolBar toolbar, PixelPainter pp, ColorPalette palette) {
+    super(toolbar, pp);
     colors = new LinkedHashSet<>(Arrays.asList(palette.getColors()));
     buildColorButtons();
   }
@@ -121,6 +121,7 @@ public class ColorBarOverlay extends Overlay {
   }
 
   public void addSelectedBrush(Color color) {
+    ImageController ctrl = pp.getImageController();
     Brush      brush   = ctrl.createColorBrush(color);
     JToolBar   toolbar = getToolBar();
     Set<Brush> brushes = new HashSet<Brush>();
@@ -134,7 +135,7 @@ public class ColorBarOverlay extends Overlay {
       }
     }
     if (!brushes.contains(brush)) {
-      JButton but = toolbar.add(brush.createAsAction(ctrl));
+      JButton but = toolbar.add(brush.createAsAction(pp));
       but.setPreferredSize(PixelPainter.toolButtonSize);
     }
     toolbar.invalidate();

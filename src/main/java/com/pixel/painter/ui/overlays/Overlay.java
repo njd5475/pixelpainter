@@ -23,33 +23,29 @@ public class Overlay {
   protected int                mouseX;
   protected int                mouseY;
   protected boolean            performMouseOp;
-  protected ImageController    ctrl;
+  protected PixelPainter       pp;
   protected int                width;
   private int                  height;
   protected int                screenWidth;
   protected int                screenHeight;
 
-  public Overlay(JToolBar toolbar, ImageController ctrl) {
+  public Overlay(JToolBar toolbar, PixelPainter pp) {
     background = new Color(0, 0, 0, 100);
 
     this.toolbar = toolbar;
-    this.ctrl    = ctrl;
+    this.pp = pp;
   }
 
   protected final JToolBar getToolBar() {
     return toolbar;
   }
-
-  public void changeControllers(ImageController ctrl) {
-    this.ctrl = ctrl;
-  }
-
+  
   public void render(Graphics2D init, int width, int height) {
     // save off the width and height for other functions
-    this.width        = width;
-    this.height       = height;
+    this.width = width;
+    this.height = height;
     this.screenHeight = height;
-    this.screenWidth  = width;
+    this.screenWidth = width;
 
     Graphics2D g = (Graphics2D) init.create();
 
@@ -61,9 +57,9 @@ public class Overlay {
     boolean highlight = rect.contains(new Point2D.Double(mouseX, mouseY));
     g.setColor(Color.lightGray);
     Graphics2D tmpG = (Graphics2D) g.create();
-    String     plus = "\uf0fe";
+    String plus = "\uf0fe";
     tmpG.setFont(PixelPainter.getFontAwesome());
-    if(highlight) {
+    if (highlight) {
       tmpG.setColor(Color.LIGHT_GRAY.brighter());
     }
     tmpG.drawString(plus, (float) (rect.getX()), (float) (rect.getMaxY() - rect.height / 2));

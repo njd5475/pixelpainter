@@ -15,6 +15,7 @@ import javax.swing.Icon;
 import com.pixel.painter.brushes.undoables.BrushUndoable;
 import com.pixel.painter.brushes.undoables.SinglePixelEdit;
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.ui.PixelPainter;
 
 public class ColorBrush extends Brush {
 
@@ -37,12 +38,12 @@ public class ColorBrush extends Brush {
 	}
 	
 	@Override
-	public Action createAsAction(ImageController ctrl) {
-	  return new BrushAction(getName(), getIcon(), ctrl, this) {
+	public Action createAsAction(PixelPainter pp) {
+	  return new BrushAction(getName(), getIcon(), pp, this) {
       @Override
 	    public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-	      ctrl.setFillColor(color);
+	      pp.getImageController().setFillColor(color);
 	    }
 	  };
 	}

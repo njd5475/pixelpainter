@@ -13,14 +13,15 @@ import java.awt.event.MouseEvent;
 import javax.swing.JToolBar;
 
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.ui.PixelPainter;
 
 public class PreviewOverlay extends Overlay {
 
   private Image previewImage;
   private int   scale = 1;
 
-  public PreviewOverlay(JToolBar toolbar, ImageController ctrl) {
-    super(toolbar, ctrl);
+  public PreviewOverlay(JToolBar toolbar, PixelPainter pp) {
+    super(toolbar, pp);
   }
 
   @Override
@@ -28,12 +29,12 @@ public class PreviewOverlay extends Overlay {
     super.render(init, width, height);
     Graphics2D g = (Graphics2D) init.create();
 
-    Dimension imgSize = ctrl.getSize();
+    Dimension imgSize = pp.getSize();
     g.setStroke(new BasicStroke(1));
     g.translate(getX(), getY());
     Graphics2D g2 = (Graphics2D) g.create();
     g2.scale(scale, scale);
-    ctrl.render(g2, Math.min(64, imgSize.width), Math.min(64, imgSize.height));
+    pp.getImageController().render(g2, Math.min(64, imgSize.width), Math.min(64, imgSize.height));
     g2.dispose();
     g.setColor(Color.yellow.darker());
     g.drawRect(-1, -1, getWidth(), getHeight());
@@ -49,11 +50,11 @@ public class PreviewOverlay extends Overlay {
   }
 
   public int getWidth() {
-    return scale * Math.min(64, ctrl.getSize().width);
+    return scale * Math.min(64, pp.getSize().width);
   }
 
   public int getHeight() {
-    return scale * Math.min(64, ctrl.getSize().height);
+    return scale * Math.min(64, pp.getSize().height);
   }
 
   @Override
@@ -74,7 +75,7 @@ public class PreviewOverlay extends Overlay {
 
   private void drawAnimationPreview(Graphics init) {
     Graphics2D g       = (Graphics2D) init.create();
-    Dimension  imgSize = ctrl.getSize();
+    Dimension  imgSize = pp.getSize();
     if(previewImage != null) {
       imgSize = new Dimension(previewImage.getWidth(null), previewImage.getHeight(null));
     }

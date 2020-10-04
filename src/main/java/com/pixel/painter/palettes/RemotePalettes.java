@@ -10,29 +10,45 @@ import com.pixel.painter.rest.RestCalls;
 
 public class RemotePalettes {
 
-  public static ColorPalette[] retreive() {
-    Map<String, Object>       response    = RestCalls.makeRestCall(
-        "https://lospec.com/palette-list/load?colorNumberFilterType=any&colorNumber=14&page=0&tag=&sortingType=default");
+  public static ColorPalette[] retreive(int numOfColors, int page) {
+    String tag = "";
+    String numberFilter = "any";
+    String sortingType = "default";
+    String params = String.format("colorNumberFilterType=%s&colorNumber=%d&page=%d&tag=%s&sortingType=%s", numberFilter, numOfColors, page, tag, sortingType);
+    String makeCall = String.format("https://lospec.com/palette-list/load?%s", params);
+    Map<String, Object> response = RestCalls.makeRestCall(makeCall);
     List<Map<String, Object>> palettesObj = (List<Map<String, Object>>) response.get("palettes");
-    List<ColorPalette>        palettes    = new LinkedList<>();
+    List<ColorPalette> palettes = new LinkedList<>();
 
-    for (Map<String, Object> pal : palettesObj) {
-    	String name = pal.get("title").toString();
-    	if(pal.get("name") != null && name == null) {
-    	    name = pal.get("name").toString();
-    	}
-      List<String> colorArray = (List<String>) pal.get("colorsArray");
-      List<Color>  colors     = new LinkedList<>();
+    if (palettesObj != null) {
+      for (Map<String, Object> pal : palettesObj) {
+        String name = pal.get("title").toString();
+        if (pal.get("name") != null && name == null) {
+          name = pal.get("name").toString();
+        }
+        List<String> colorArray = (List<String>) pal.get("colorsArray");
+        List<Color> colors = new LinkedList<>();
 
-      for (String hex : colorArray) {
-        colors.add(Color.decode(hex));
+        for (String hex : colorArray) {
+          try {
+            if(hex.startsWith("0x")) {
+              colors.add(Color.decode(hex));
+            }else {
+              colors.add(Color.decode("0x" + hex));
+            }
+          }catch(NumberFormatException nfe) {
+            System.out.format("Could not parse color %s\n", hex);
+          }
+        }
+
+        ColorPalette cp = new ColorPalette(name);
+        cp.addColors(colors);
+        palettes.add(cp);
       }
 
-      ColorPalette cp = new ColorPalette(name);
-      cp.addColors(colors);
-      palettes.add(cp);
+      return palettes.toArray(new ColorPalette[palettes.size()]);
     }
 
-    return palettes.toArray(new ColorPalette[palettes.size()]);
+    return new ColorPalette[0];
   }
 }

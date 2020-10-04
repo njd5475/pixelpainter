@@ -4,9 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -29,6 +33,7 @@ public class FindPaletteWindow extends JDialog {
   private ColorPalette[] palettes;
   private JPanel mainPanel = new JPanel();
   private PaletteManager manager;
+  private int page = 0;
 
   public FindPaletteWindow(JFrame parent, PaletteManager manager) {
     super(parent);
@@ -47,7 +52,18 @@ public class FindPaletteWindow extends JDialog {
     mainPanel.add(bar, BorderLayout.CENTER);
     
     this.thread = new Thread(() -> {
-      ColorPalette[] retreive = RemotePalettes.retreive();
+      ColorPalette[] retreive = RemotePalettes.retreive(8, page);
+      javax.swing.SwingUtilities.invokeLater(() -> {
+        consume(retreive);
+      });
+    });
+    this.thread.start();
+  }
+  
+  private void next() {
+    ++page;
+    this.thread = new Thread(() -> {
+      ColorPalette[] retreive = RemotePalettes.retreive(8, page);
       javax.swing.SwingUtilities.invokeLater(() -> {
         consume(retreive);
       });
@@ -77,10 +93,23 @@ public class FindPaletteWindow extends JDialog {
       mainPanel.add(label);
       System.out.println(cp.getName());
     }
+    mainPanel.add(new JButton(this.nextAction()));
+    mainPanel.revalidate();
     this.pack();
     this.repaint();
   }
   
+  private Action nextAction() {
+    Action a = new AbstractAction("Next Page") {
+      
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        FindPaletteWindow.this.next();
+      }
+    };
+    return a;
+  }
+
   private JComponent buildPaletteComponent(JComponent comp, ColorPalette cp) {
 
     MaterialComponentBuilder builder    = new MaterialComponentBuilder(comp);
@@ -98,7 +127,7 @@ public class FindPaletteWindow extends JDialog {
 
     String   names[]   = group.toArray(new String[group.size()]);
     matBuilder.push();
-    Material matColors = matBuilder.left(1.0f).container(names).resizableComponents().build("PaletteMaterial");
+    Material matColors = matBuilder.left(1.0f).text(String.format("Name: %s", cp.getName()), Color.white).container(names).resizableComponents().build("PaletteMaterial");
     return builder.wrap(matColors);
   }
   

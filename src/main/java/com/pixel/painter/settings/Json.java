@@ -20,26 +20,14 @@ import java.util.Stack;
 public final class Json {
 
   protected enum Type {
-    CLOSE_ARRAY,
-    CLOSE_OBJECT,
-    DIGIT,
-    DOUBLE_QUOTE,
-    KEYVAL_SEPARATOR,
-    NEWLINE,
-    OBJECT_SEPARATOR,
-    OPEN_ARRAY,
-    OPEN_OBJECT,
-    PERIOD,
-    SINGLE_QUOTE,
-    UNKNOWN,
-    WHITESPACE,
-    STRING_ESCAPE
+    CLOSE_ARRAY, CLOSE_OBJECT, DIGIT, DOUBLE_QUOTE, KEYVAL_SEPARATOR, NEWLINE, OBJECT_SEPARATOR, OPEN_ARRAY,
+    OPEN_OBJECT, PERIOD, SINGLE_QUOTE, UNKNOWN, WHITESPACE, STRING_ESCAPE
   };
 
   protected static class Token {
-    private Type          _type;
+    private Type _type;
     private StringBuilder contents;
-    private int           line = 0, col = 0;
+    private int line = 0, col = 0;
 
     public Token(char ch, int line, int col) {
       _type = type(ch);
@@ -71,7 +59,7 @@ public final class Json {
 
     public boolean isOneOf(Type... types) {
       for (Type t : types) {
-        if(is(t)) {
+        if (is(t)) {
           return true;
         }
       }
@@ -88,7 +76,7 @@ public final class Json {
 
     public boolean matches(String... any) {
       for (String match : any) {
-        if(contents.toString().equals(match)) {
+        if (contents.toString().equals(match)) {
           return true;
         }
       }
@@ -97,17 +85,17 @@ public final class Json {
 
     public Token next(char ch) {
       Type nextType = type(ch);
-      if(_type == null) {
+      if (_type == null) {
         _type = nextType;
       }
 
       int nLine = line, nCol = col + 1;
-      if(nextType == Type.NEWLINE) {
+      if (nextType == Type.NEWLINE) {
         ++nLine;
         nCol = 1;
       }
 
-      if(_type != nextType || _type == Type.NEWLINE || _type == Type.DOUBLE_QUOTE || _type == Type.CLOSE_OBJECT
+      if (_type != nextType || _type == Type.NEWLINE || _type == Type.DOUBLE_QUOTE || _type == Type.CLOSE_OBJECT
           || _type == Type.OPEN_OBJECT || _type == Type.OPEN_ARRAY || _type == Type.CLOSE_ARRAY) {
         return new Token(ch, nLine, nCol);
       } else {
@@ -123,37 +111,37 @@ public final class Json {
     }
 
     public Type type(char ch) {
-      if(ch == '{') {
+      if (ch == '{') {
         return Type.OPEN_OBJECT;
-      } else if(ch == '}') {
+      } else if (ch == '}') {
         return Type.CLOSE_OBJECT;
-      } else if(ch == '\\') {
+      } else if (ch == '\\') {
         return Type.STRING_ESCAPE;
-      } else if(ch == '[') {
+      } else if (ch == '[') {
         return Type.OPEN_ARRAY;
-      } else if(ch == ']') {
+      } else if (ch == ']') {
         return Type.CLOSE_ARRAY;
-      } else if(ch == '"') {
+      } else if (ch == '"') {
         return Type.DOUBLE_QUOTE;
-      } else if(ch == '\'') {
+      } else if (ch == '\'') {
         return Type.SINGLE_QUOTE;
-      } else if(ch == ',') {
+      } else if (ch == ',') {
         return Type.OBJECT_SEPARATOR;
-      } else if(ch == ':') {
+      } else if (ch == ':') {
         return Type.KEYVAL_SEPARATOR;
-      } else if(ch == ' ' || ch == '\t') {
+      } else if (ch == ' ' || ch == '\t') {
         return Type.WHITESPACE;
-      } else if(ch >= '0' && ch <= '9') {
+      } else if (ch >= '0' && ch <= '9') {
         return Type.DIGIT;
-      } else if(ch == '.') {
+      } else if (ch == '.') {
         return Type.PERIOD;
-      } else if(ch == '\n') {
+      } else if (ch == '\n') {
         return Type.NEWLINE;
       }
       return Type.UNKNOWN;
     }
   }
-  
+
   public static class TokenError extends Error {
     public TokenError(String err) {
       super(err);
@@ -167,7 +155,7 @@ public final class Json {
       super("Error: Unexpected end of stream, expected " + expected.name());
     }
   }
-  
+
   public static class TokenStreamEmptyError extends Error {
     public TokenStreamEmptyError(String err) {
       super(err);
@@ -195,9 +183,9 @@ public final class Json {
   }
 
   private static void expect(List<Token> tokens, Type t) {
-    if(!tokens.isEmpty() && tokens.get(0).is(t)) {
+    if (!tokens.isEmpty() && tokens.get(0).is(t)) {
       tokens.remove(0);
-    } else if(!tokens.isEmpty()) {
+    } else if (!tokens.isEmpty()) {
       throw new TokenError(tokens.get(0), t);
     } else {
       // the tokens are empty so we expected one but didn't get it
@@ -213,8 +201,8 @@ public final class Json {
   }
 
   public static void main(String... args) {
-    String              strObj = "{\"z\" : [{\"a\":\"\"},{},    { },{}, \'6\'], \" so\\\" \\\"me \":true, \"list\":[9,54,4,true,false,{}]\n, \"val_null\": null}";
-    Map<String, Object> jObj   = parse(strObj);
+    String strObj = "{\"z\" : [{\"a\":\"\"},{},    { },{}, \'6\'], \" so\\\" \\\"me \":true, \"list\":[9,54,4,true,false,{}]\n, \"val_null\": null}";
+    Map<String, Object> jObj = parse(strObj);
     assert (jObj != null);
     Map<String, Object> not = new LinkedHashMap<String, Object>(jObj);
     System.out.println(strObj);
@@ -223,7 +211,7 @@ public final class Json {
   }
 
   private static Map<String, Object> objectContents(List<Token> tokens, Map<String, Object> obj) {
-    if(tokens.isEmpty()) {
+    if (tokens.isEmpty()) {
       throw new TokenError("Object contents");
     }
     ignoreWhitespace(tokens);
@@ -231,12 +219,15 @@ public final class Json {
       while (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
         objectField(tokens, obj);
         ignoreWhitespace(tokens);
-        if(!tokens.get(0).is(Type.CLOSE_OBJECT)) {
+        if (!tokens.get(0).is(Type.CLOSE_OBJECT)) {
           expect(tokens, Type.OBJECT_SEPARATOR);
         }
       }
     } catch (IndexOutOfBoundsException ioobe) {
       // we must have reached the end of the stream
+      if (!tokens.isEmpty()) {
+        ioobe.printStackTrace();
+      }
     }
     return obj;
   }
@@ -247,7 +238,7 @@ public final class Json {
     ignoreWhitespace(tokens);
     expect(tokens, Type.KEYVAL_SEPARATOR);
     Object value = objectValue(tokens);
-    if(obj.containsKey(key)) {
+    if (obj.containsKey(key)) {
       throw new TokenError("Duplicate key found");
     }
     obj.put(key, value);
@@ -255,22 +246,22 @@ public final class Json {
 
   private static Object objectValue(List<Token> tokens) {
     ignoreWhitespace(tokens);
-    Object o   = null;
-    Token  top = tokens.get(0);
-    if(top.is(Type.DOUBLE_QUOTE)) {
+    Object o = null;
+    Token top = tokens.get(0);
+    if (top.is(Type.DOUBLE_QUOTE)) {
       o = string(tokens, false);
-    } else if(top.is(Type.SINGLE_QUOTE)) {
+    } else if (top.is(Type.SINGLE_QUOTE)) {
       o = string(tokens, true);
-    } else if(top.is(Type.OPEN_OBJECT)) {
+    } else if (top.is(Type.OPEN_OBJECT)) {
       o = parseObject(tokens);
-    } else if(top.is(Type.OPEN_ARRAY)) {
+    } else if (top.is(Type.OPEN_ARRAY)) {
       o = parseArray(tokens);
-    } else if(tokens.get(0).matches("true", "false")) {
+    } else if (tokens.get(0).matches("true", "false")) {
       o = parseBoolean(tokens);
-    } else if(tokens.get(0).matches("null")) {
+    } else if (tokens.get(0).matches("null")) {
       tokens.remove(0);
       o = null;
-    } else if(tokens.get(0).isOneOf(Type.DIGIT, Type.PERIOD)) {
+    } else if (tokens.get(0).isOneOf(Type.DIGIT, Type.PERIOD)) {
       o = parseNumber(tokens);
     }
     return o;
@@ -280,13 +271,13 @@ public final class Json {
     Type quote = singleQuote ? Type.SINGLE_QUOTE : Type.DOUBLE_QUOTE;
     expect(tokens, quote);
     StringBuilder builder = new StringBuilder();
-    boolean       cont    = false;
+    boolean cont = false;
     try {
       do {
         cont = false;
         String all = concateTill(tokens, Type.STRING_ESCAPE, quote);
         builder.append(all);
-        if(tokens.get(0).is(Type.STRING_ESCAPE)) {
+        if (tokens.get(0).is(Type.STRING_ESCAPE)) {
           tokens.remove(0);
           builder.append('\\');
           builder.append(tokens.remove(0).getContents());
@@ -308,11 +299,11 @@ public final class Json {
     List<Token> tokens = new LinkedList<Token>();
     try {
       Token current = new Token((char) r.read(), 1, 1);
-      int   nextCh  = -1;
+      int nextCh = -1;
       Token next;
       while (r.ready() && (nextCh = r.read()) != -1) {
         next = current.next((char) nextCh);
-        if(next != current) {
+        if (next != current) {
           tokens.add(current);
           current = next;
         }
@@ -348,7 +339,7 @@ public final class Json {
   public static JsonObject parseFileObject(File configFile, String defaultObj) {
     try {
       String jsonFile = new String(Files.readAllBytes(configFile.toPath()), Charset.defaultCharset());
-      if(jsonFile.isEmpty() || jsonFile.trim().isEmpty()) {
+      if (jsonFile.isEmpty() || jsonFile.trim().isEmpty()) {
         jsonFile = defaultObj;
       }
       return parseToWrapper(jsonFile);
@@ -365,12 +356,16 @@ public final class Json {
     List<Object> array = new LinkedList<Object>();
     expect(tokens, Type.OPEN_ARRAY);
     while (!tokens.get(0).is(Type.CLOSE_ARRAY)) {
-      ignoreWhitespace(tokens);
-      Object o = objectValue(tokens);
-      array.add(o);
-      ignoreWhitespace(tokens);
-      if(!tokens.get(0).is(Type.CLOSE_ARRAY)) {
-        expect(tokens, Type.OBJECT_SEPARATOR);
+      try {
+        ignoreWhitespace(tokens);
+        Object o = objectValue(tokens);
+        array.add(o);
+        ignoreWhitespace(tokens);
+        if (!tokens.get(0).is(Type.CLOSE_ARRAY)) {
+          expect(tokens, Type.OBJECT_SEPARATOR);
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
     }
     expect(tokens, Type.CLOSE_ARRAY);
@@ -378,10 +373,10 @@ public final class Json {
   }
 
   private static Object parseBoolean(List<Token> tokens) {
-    if(tokens.get(0).matches("true")) {
+    if (tokens.get(0).matches("true")) {
       tokens.remove(0);
       return true;
-    } else if(tokens.get(0).matches("false")) {
+    } else if (tokens.get(0).matches("false")) {
       tokens.remove(0);
       return false;
     } else {
@@ -394,7 +389,7 @@ public final class Json {
     while (tokens.get(0).is(Type.DIGIT)) {
       number.append(tokens.remove(0).getContents());
     }
-    if(tokens.get(0).is(Type.PERIOD)) {
+    if (tokens.get(0).is(Type.PERIOD)) {
       number.append(tokens.remove(0).getContents());
       while (tokens.get(0).is(Type.DIGIT)) {
         number.append(tokens.remove(0).getContents());
@@ -406,16 +401,23 @@ public final class Json {
   }
 
   private static Map<String, Object> parseObject(List<Token> tokens) {
-    ignoreWhitespace(tokens);
-    expect(tokens, Type.OPEN_OBJECT);
-    Map<String, Object> newObj = objectContents(tokens, new LinkedHashMap<String, Object>());
-    ignoreWhitespace(tokens);
+    Map<String, Object> newObj = new LinkedHashMap<String, Object>();
     try {
-      expect(tokens, Type.CLOSE_OBJECT);
-    } catch (IndexOutOfBoundsException | TokenStreamEmptyError ioobe) {
-      // we must have reached the end of the stream
+      ignoreWhitespace(tokens);
+      expect(tokens, Type.OPEN_OBJECT);
+
+      newObj = objectContents(tokens, newObj);
+
+      ignoreWhitespace(tokens);
+      try {
+        expect(tokens, Type.CLOSE_OBJECT);
+      } catch (IndexOutOfBoundsException | TokenStreamEmptyError ioobe) {
+        // we must have reached the end of the stream
+      }
+      ignoreWhitespace(tokens);
+    } catch (TokenError te) {
+
     }
-    ignoreWhitespace(tokens);
     return newObj;
   }
 
@@ -438,70 +440,70 @@ public final class Json {
   @SuppressWarnings("unchecked")
   public static String toJson(Map<String, Object> object) {
     StringBuilder toReturn = new StringBuilder("");
-    Object        comma    = new Object();
+    Object comma = new Object();
     // reduce
-    if(!object.isEmpty()) {
+    if (!object.isEmpty()) {
       Stack<Object> recurse = new Stack<Object>();
       recurse.push(object);
       toReturn.append("{");
       while (!recurse.isEmpty()) {
         Object o = recurse.pop();
-        if(o instanceof Map) {
+        if (o instanceof Map) {
           Map<Object, Object> mp = (Map<Object, Object>) o;
-          if(!mp.isEmpty()) {
+          if (!mp.isEmpty()) {
             Object key = mp.keySet().iterator().next();
             Object val = mp.remove(key);
             toReturn.append(String.format("\"%s\":", key));
             recurse.push(mp);
-            if(val instanceof Array || val instanceof String[] || val instanceof int[] || val instanceof float[]
+            if (val instanceof Array || val instanceof String[] || val instanceof int[] || val instanceof float[]
                 || val instanceof double[] || val instanceof short[]) {
               val = Arrays.asList((Object[]) val);
             }
-            if(val instanceof Iterable) {
+            if (val instanceof Iterable) {
               toReturn.append("[");
-            } else if(val instanceof Map) {
+            } else if (val instanceof Map) {
               toReturn.append("{");
             }
-            if(!mp.isEmpty()) {
+            if (!mp.isEmpty()) {
               recurse.push(comma);
             }
             recurse.push(val);
           } else {
             toReturn.append("}");
           }
-        } else if(o instanceof Iterable || o instanceof Array || o instanceof String[] || o instanceof int[]
+        } else if (o instanceof Iterable || o instanceof Array || o instanceof String[] || o instanceof int[]
             || o instanceof float[] || o instanceof double[] || o instanceof short[]) {
-          if(o instanceof Array || o instanceof String[] || o instanceof int[] || o instanceof float[]
+          if (o instanceof Array || o instanceof String[] || o instanceof int[] || o instanceof float[]
               || o instanceof double[] || o instanceof short[]) {
             o = Arrays.asList((Object[]) o);
           }
           Iterable<Object> arr = (Iterable<Object>) o;
-          if(arr.iterator().hasNext()) {
-            List<Object>     tmp   = new LinkedList<Object>();
-            Iterator<Object> iter  = arr.iterator();
-            Object           first = iter.next();
+          if (arr.iterator().hasNext()) {
+            List<Object> tmp = new LinkedList<Object>();
+            Iterator<Object> iter = arr.iterator();
+            Object first = iter.next();
             while (iter.hasNext()) {
               tmp.add(iter.next());
             }
 
             recurse.push(tmp);
-            if(!tmp.isEmpty()) {
+            if (!tmp.isEmpty()) {
               recurse.push(comma);
             }
             recurse.push(first);
-            if(first instanceof Map) {
+            if (first instanceof Map) {
               toReturn.append("{");
-            } else if(first instanceof Iterable) {
+            } else if (first instanceof Iterable) {
               toReturn.append("[");
             }
           } else {
             toReturn.append("]");
           }
-        } else if(o == comma) {
+        } else if (o == comma) {
           toReturn.append(',');
-        } else if(o == null) {
+        } else if (o == null) {
           toReturn.append("null");
-        } else if(o instanceof Number || o instanceof Boolean) {
+        } else if (o instanceof Number || o instanceof Boolean) {
           toReturn.append(o.toString());
         } else {
           toReturn.append('"');

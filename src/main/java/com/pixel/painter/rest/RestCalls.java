@@ -23,11 +23,11 @@ public class RestCalls {
       InputStream         inputStream = openConnection.getInputStream();
       StringBuilder sb = new StringBuilder();
       byte buf[] = new byte[1024];
-      while(inputStream.available() > 0) {
-        int readCount = inputStream.read(buf);
+      int readCount = 0;
+      while((readCount = inputStream.read(buf)) >= 0) {
         sb.append(new String(buf, 0, readCount));
       }
-      System.out.println(sb.toString());
+       System.out.println(sb.toString());
       Map<String, Object> parse       = Json.parse(new ByteArrayInputStream(sb.toString().getBytes()));
       return parse;
     } catch (MalformedURLException e) {

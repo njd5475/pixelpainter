@@ -1,6 +1,7 @@
 package com.pixel.painter.ui.materials;
 
 import java.awt.AlphaComposite;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ public class Material {
   protected final Material                            parent;
   protected final Map<String, MaterialRenderProperty> properties;
   private List<Renderer>                              renderers;
+  private boolean                                     display = true;
 
   protected Material(Material m) {
     this.parent = m;
@@ -29,7 +31,7 @@ public class Material {
   public List<Renderer> getRenderers() {
     List<Renderer> renderers = new LinkedList<Renderer>();
     renderers.addAll(this.renderers);
-    if(this.parent != null) {
+    if (this.parent != null) {
       renderers.addAll(this.parent.getRenderers());
     }
     return renderers;
@@ -38,10 +40,10 @@ public class Material {
   protected void put(String name, MaterialRenderProperty property) {
     properties.put(name, property);
   }
-  
+
   public MaterialRenderProperty getUpChain(String name) {
     MaterialRenderProperty p = properties.get(name);
-    if(p == null) {
+    if (p == null) {
       p = parent.getUpChain(name);
     }
     return p;
@@ -54,6 +56,13 @@ public class Material {
   protected MaterialRenderProperty remove(String name) {
     return properties.remove(name);
   }
+  
+  public FontMetrics getFontMetrics() {
+    if(parent == null) {
+      return null;
+    }
+    return this.parent.getFontMetrics();
+  }
 
   public void applyProperties(Graphics2D g) {
     this.parent.applyProperties(g);
@@ -61,96 +70,126 @@ public class Material {
       prop.apply(g, this);
     }
   }
-  
+
   public boolean isState(String state) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       return parent.isState(state);
     }
     return false;
   }
-  
+
   public void setState(String state) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.setState(state);
     }
   }
-  
+
   public void unsetState(String state) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.unsetState(state);
     }
   }
+  
+  public boolean toggleDisplay() {
+    return (this.display = !this.display);
+  }
 
+  public boolean isDisplayable() {
+    return this.display;
+  }
+  
+  /**
+   * Sets the display property to true and returns what it was before the call.
+   * 
+   * @return Old display value before setting to true.
+   */
+  public boolean show() {
+    boolean oldDisplay = this.display;
+    this.display = true;
+    return oldDisplay;
+  }
+  
+  /**
+   * Sets the display property to false and returns what it was before the call.
+   * 
+   * @return Old display value before setting to false.
+   */
+  public boolean hide() {
+    boolean oldDisplay = this.display;
+    this.display = false;
+    return oldDisplay;
+  } 
+  
   public MaterialBuilder derive() {
     return new MaterialBuilderBase(this);
   }
 
   public int getX() {
-    if(this.parent == null) {
+    if (this.parent == null) {
       return 0;
     }
     return this.parent.getX();
   }
 
   public int getY() {
-    if(this.parent == null) {
+    if (this.parent == null) {
       return 0;
     }
     return this.parent.getY();
   }
 
   public int getWidth() {
-    if(this.parent == null) {
+    if (this.parent == null) {
       return 0;
     }
     return this.parent.getWidth();
   }
 
   public int getHeight() {
-    if(this.parent == null) {
+    if (this.parent == null) {
       return 0;
     }
     return this.parent.getHeight();
   }
-  
+
   public void mouseOut(MouseEvent e) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.mouseOut(e);
     }
   }
 
   public void mouseOver(MouseEvent e) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.mouseOver(e);
     }
   }
 
   public void mouseClicked() {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.mouseClicked();
     }
   }
 
   public void mouseDown(MouseEvent e) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.mouseDown(e);
     }
   }
 
   public void mouseUp(MouseEvent e) {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.mouseUp(e);
     }
   }
 
   public void keyDown() {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.keyDown();
     }
   }
 
   public void keyUp() {
-    if(this.parent != null) {
+    if (this.parent != null) {
       this.parent.keyUp();
     }
   }
@@ -163,6 +202,9 @@ public class Material {
    * @param g
    */
   public static void draw(Material m, Graphics2D g) {
+    if(!m.isDisplayable()) {
+      return;
+    }
     g.setComposite(AlphaComposite.Src);
     m.applyProperties(g);
     for (Renderer renderer : m.getRenderers()) {
@@ -173,14 +215,14 @@ public class Material {
   public static Material getScreenFor(final JComponent c) {
     Material m = new Material(null) {
       protected Map<String, Boolean> states = new HashMap<>();
-      
+
       public int getX() {
         return 0;
       }
 
       @Override
       public boolean isState(String state) {
-        if(!states.containsKey(state)) {
+        if (!states.containsKey(state)) {
           return false;
         }
         return states.get(state);
@@ -209,6 +251,11 @@ public class Material {
       @Override
       public int getHeight() {
         return c.getHeight();
+      }
+      
+      @Override
+      public FontMetrics getFontMetrics() {
+        return c.getFontMetrics(c.getFont());
       }
 
       @Override

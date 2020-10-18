@@ -103,6 +103,7 @@ import com.pixel.painter.ui.materials.ColorProperty;
 import com.pixel.painter.ui.materials.Material;
 import com.pixel.painter.ui.materials.MaterialActionHandler;
 import com.pixel.painter.ui.materials.MaterialBuilder;
+import com.pixel.painter.ui.materials.MaterialBuilder.AlignMode;
 import com.pixel.painter.ui.materials.MaterialBuilderBase;
 import com.pixel.painter.ui.materials.MaterialRenderProperty;
 import com.pixel.painter.ui.overlays.ColorInfoOverlay;
@@ -150,19 +151,18 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public enum FILE_CHOOSER {
-    OPEN_IMAGE,
-    SAVE_IMAGE
+    OPEN_IMAGE, SAVE_IMAGE
   };
 
   /**
    * 
    */
-  private static final long   serialVersionUID = -1341074200545654219L;
-  private static final Color  GRID_COLOR       = Color.black;
-  private static final String version          = "v0.2";
+  private static final long            serialVersionUID = -1341074200545654219L;
+  private static final Color           GRID_COLOR       = Color.black;
+  private static final String          version          = "v0.2";
 
-  private static boolean               gridOn  = true;
-  private static boolean               preview = true;
+  private static boolean               gridOn           = true;
+  private static boolean               preview          = true;
   private static boolean               animation;
   private static JFrame                frame;
   private static JToolBar              tools;
@@ -184,7 +184,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     allBrushes.put(fill.getName(), fill);
   }
 
-  private ImageController ctrl;
+  private ImageController            ctrl;
 
   private BufferedImage              backdrop;
   private double                     scale = 1.0;
@@ -194,21 +194,21 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private File                       file;
   private Map<File, ImageController> controllers;
 
-  private SpriteController spriteController;
-  private Image            previewImage;
-  private BufferedImage    backgroundImage;
+  private SpriteController           spriteController;
+  private Image                      previewImage;
+  private BufferedImage              backgroundImage;
 
-  private Set<ModifyListener>    modifyListeners;
-  private Material               colorbarMaterial;
-  private MaterialBuilder        builder;
-  private JMenu recentsMenu;
-  private static Set<Overlay>    overlays;
-  private static Set<Material>   materials;
-  private static PreviewAnimator animator;
-  private static int             imageHeight;
-  private static int             imageWidth;
-  public static Dimension        toolButtonSize;
-  private static Material        paletteMaterial;
+  private Set<ModifyListener>        modifyListeners;
+  private Material                   colorbarMaterial;
+  private MaterialBuilder            builder;
+  private JMenu                      recentsMenu;
+  private static Set<Overlay>        overlays;
+  private static Set<Material>       materials;
+  private static PreviewAnimator     animator;
+  private static int                 imageHeight;
+  private static int                 imageWidth;
+  public static Dimension            toolButtonSize;
+  private static Material            paletteMaterial;
 
   public PixelPainter(ImageController ctrl, File file) {
     this.file = file;
@@ -219,7 +219,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     ctrl.addBrushChangeListener(this);
     paletteManager = PaletteManager.loadSavedPalettes(paletteManager);
     paletteManager.addPaletteListener(this);
-    if(paletteManager.get("default") == null) {
+    if (paletteManager.get("default") == null) {
       paletteManager.addPalette("default", ColorPalette.createFrom("default", //
           Color.green, Color.red, Color.blue, //
           Color.gray, Color.orange, Color.yellow, //
@@ -233,9 +233,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         Map<String, Object> paletteObjects = new HashMap<>();
         for (Map.Entry<String, ColorPalette> cp : paletteManager.getPalettes()) {
           Map<String, Object> colorsObj = new HashMap<>();
-          Color               clr[]     = cp.getValue().getColors();
-          String[]            cToStr    = new String[clr.length];
-          if(clr != null) {
+          Color clr[] = cp.getValue().getColors();
+          String[] cToStr = new String[clr.length];
+          if (clr != null) {
             for (int i = 0; i < clr.length; ++i) {
               cToStr[i] = String.format("#%02x%02x%02x", clr[i].getRed(), clr[i].getGreen(), clr[i].getBlue());
             }
@@ -244,7 +244,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           paletteObjects.put(cp.getKey(), colorsObj);
         }
         File paletteFile = new File(Settings.getInstance().settingsDir(), "palettes.json");
-        if(!paletteFile.exists()) {
+        if (!paletteFile.exists()) {
           try {
             paletteFile.createNewFile();
           } catch (IOException e) {
@@ -300,14 +300,14 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         for (Material m : materials) {
           Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-          if(r.contains(e.getPoint())) {
+          if (r.contains(e.getPoint())) {
             m.mouseDown(e);
             e.consume();
             break;
           }
         }
 
-        if(!e.isConsumed()) {
+        if (!e.isConsumed()) {
           handleMouseEvent(e);
         }
 
@@ -322,14 +322,14 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         for (Material m : materials) {
           Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-          if(r.contains(e.getPoint())) {
+          if (r.contains(e.getPoint())) {
             m.mouseUp(e);
             e.consume();
             break;
           }
         }
 
-        if(!e.isConsumed()) {
+        if (!e.isConsumed()) {
           handleMouseEvent(e);
         }
 
@@ -353,12 +353,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         for (Material m : materials) {
           Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-          if(r.contains(e.getPoint())) {
+          if (r.contains(e.getPoint())) {
             m.setState("mouseOver");
             m.mouseOver(e);
             e.consume();
             break;
-          } else if(m.isState("mouseOver")) {
+          } else if (m.isState("mouseOver")) {
             m.setState("mouseOut");
             m.mouseOut(e);
           }
@@ -376,7 +376,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           o.mouseWheel(e);
         }
 
-        if(!e.isConsumed()) {
+        if (!e.isConsumed()) {
           scale += e.getWheelRotation() * 0.1;
         }
 
@@ -396,7 +396,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       @Override
       public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
         for (DataFlavor df : transferFlavors) {
-          if(df.equals(DataFlavor.javaFileListFlavor)) {
+          if (df.equals(DataFlavor.javaFileListFlavor)) {
             return true;
           }
         }
@@ -410,7 +410,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           List<?> list = (List<?>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
 
           for (Object o : list) {
-            if(o instanceof File) {
+            if (o instanceof File) {
               File f = (File) o;
 
               openNewFile(f);
@@ -441,7 +441,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     ctrl.addBrushChangeListener(this);
     scaleToFit();
     this.repaint();
-    if(file != null) {
+    if (file != null) {
       frame.setTitle(String.format("%s - %s", file.getName(), file.getParentFile().getAbsolutePath()));
     }
 
@@ -450,12 +450,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     ctrl.addAllModifyListeners(modifyListeners);
   }
 
-
   private void handleMouseEvent(MouseEvent e) {
-    if(e.getID() == MouseEvent.MOUSE_PRESSED) {
+    if (e.getID() == MouseEvent.MOUSE_PRESSED) {
       ctrl.startRecording();
     }
-    Dimension          d    = ctrl.getSize();
+    Dimension d = ctrl.getSize();
     Rectangle2D.Double rect = new Rectangle2D.Double(0, 0, d.width, d.height);
     // Shape shp = transform.createTransformedShape(rect);
     Point2D.Double ePtDst = new Point2D.Double(0, 0);
@@ -466,15 +465,15 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     }
     // System.out.println(ePtDst);
     Point pt = new Point((int) ePtDst.x, (int) ePtDst.y);
-    if(rect.contains(pt)) {
-      if(e.getButton() == MouseEvent.BUTTON3) {
+    if (rect.contains(pt)) {
+      if (e.getButton() == MouseEvent.BUTTON3) {
         ctrl.setColorAt(pt.x, pt.y);
       } else {
         ctrl.applyBrush(pt.x, pt.y);
         repaint();
       }
     }
-    if(e.getID() == MouseEvent.MOUSE_RELEASED) {
+    if (e.getID() == MouseEvent.MOUSE_RELEASED) {
       try {
         ctrl.endRecording();
       } catch (RuntimeException re) {
@@ -484,9 +483,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private void updateTransform() {
-    Dimension d       = ctrl.getSize();
+    Dimension d = ctrl.getSize();
     Dimension wndSize = size;
-    if(wndSize == null) {
+    if (wndSize == null) {
       wndSize = new Dimension(getWidth(), getHeight());
     }
     transform.setToIdentity();
@@ -506,7 +505,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     setImageTransform(g);
     drawBackground(g);
     ctrl.render(g);
-    if(gridOn) {
+    if (gridOn) {
       drawGrid((Graphics2D) init.create());
     }
     // if(preview && !animation) {
@@ -529,9 +528,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public void setImageTransform(Graphics2D g) {
-    Dimension d       = ctrl.getSize();
+    Dimension d = ctrl.getSize();
     Dimension wndSize = size;
-    if(wndSize == null) {
+    if (wndSize == null) {
       wndSize = new Dimension(getWidth(), getHeight());
     }
     g.translate(wndSize.width / 2.0, wndSize.height / 2.0);
@@ -544,7 +543,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
   private void drawGrid(Graphics2D init) {
     Graphics2D g = (Graphics2D) init.create();
-    if(scale > 1.5) {
+    if (scale > 1.5) {
       translateToImage(g);
       g.setColor(GRID_COLOR);
       Dimension d = ctrl.getSize();
@@ -566,14 +565,14 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private void drawBackground(Graphics2D init) {
-    Graphics2D g        = (Graphics2D) init.create();
-    Color      offWhite = new Color(250, 250, 250);
-    Color      gray     = new Color(100, 100, 100);
+    Graphics2D g = (Graphics2D) init.create();
+    Color offWhite = new Color(250, 250, 250);
+    Color gray = new Color(100, 100, 100);
 
     int w = 16, h = 16;
 
     // draw backdrop image
-    if(backdrop == null) {
+    if (backdrop == null) {
 
       int scale = 2;
       backdrop = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -587,12 +586,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       bg.dispose();
     }
 
-    double             denominator = this.scale;
-    double             scale       = 1 / denominator;
-    Dimension          d           = ctrl.getSize();
-    Rectangle2D.Double cSpaceRect  = new Rectangle2D.Double(0, 0, d.width * denominator, d.height * denominator);
+    double denominator = this.scale;
+    double scale = 1 / denominator;
+    Dimension d = ctrl.getSize();
+    Rectangle2D.Double cSpaceRect = new Rectangle2D.Double(0, 0, d.width * denominator, d.height * denominator);
 
-    if(backgroundImage == null) {
+    if (backgroundImage == null) {
       g.scale(scale, scale);
       TexturePaint texPaint = new TexturePaint(backdrop, new Rectangle2D.Double(0, 0, w, h));
       g.setPaint(texPaint);
@@ -631,15 +630,15 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         File commandLineFile = null;
         for (String arg : args) {
           File f = new File(arg);
-          if(f.exists()) {
+          if (f.exists()) {
             commandLineFile = f;
             break;
           }
         }
 
-        ImageController ctrl         = null;
-        PixelPainter    pixelPainter = null;
-        if(commandLineFile == null) {
+        ImageController ctrl = null;
+        PixelPainter pixelPainter = null;
+        if (commandLineFile == null) {
           ctrl = SingleImageController.createNewInstance(imageSize.width, imageSize.height);
         } else {
           try {
@@ -656,7 +655,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public static void createAndDisplay(PixelPainter painter, int closeOp) {
-    ImageController  ctrl       = painter.getController();
+    ImageController ctrl = painter.getController();
     SpriteController spriteCtrl = painter.getSpriteController();
     frame = new JFrame("Pixel Painter " + version);
     frame.setLayout(new BorderLayout());
@@ -671,7 +670,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public SpriteController getSpriteController() {
-    if(spriteController == null) {
+    if (spriteController == null) {
       spriteController = new SpriteController(this, imageWidth, imageHeight);
     }
     return spriteController;
@@ -684,7 +683,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   private static void setupToolBar(final ImageController ctrl, SpriteController sprites, JFrame frame2,
       PixelPainter pp) {
     tools = new JToolBar();
-    Font        f  = getFontAwesome();
+    Font f = getFontAwesome();
     FontMetrics fm = tools.getFontMetrics(f);
 
     System.out.println("Font info: " + fm.getLeading() + " ");
@@ -720,14 +719,17 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           m.unsetState("over");
           pp.repaint();
         });
+    pp.addMaterial(
+        pp.getBuilder().push().percentage(70).center("root").build("canvas"));
+    pp.addMaterial(pp.getBuilder().push().background(new Color(255, 0, 255)).text("1", Color.black).shrinkToText("1")
+        .above("canvas").leftOf("canvas", AlignMode.INSIDE).build("layer1"));
     pp.addMaterial(paletteMaterial);
-    Material layers = pp.getBuilder()
-        .push()
-        .fixedSize(100, 100)
-        .background(Color.blue)
-        .text("Hello World!", Color.black)
-        .build("Layer");
-    pp.addMaterial(layers);
+    Material preview = pp.getBuilder().push().fixedSize(100, 100).image((g, m) -> {
+      Image img = pp.getImageController().getImage();
+      g.drawImage(img, m.getX(), m.getY(), m.getX() + m.getWidth(), m.getY() + m.getHeight(), 0, 0, img.getWidth(null),
+          img.getHeight(null), null);
+    }).build("Preview");
+    pp.addMaterial(preview);
     overlays.add(new ColorBarOverlay(tools, pp, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, pp, sprites));
     overlays.add(new ColorInfoOverlay(tools, pp));
@@ -736,7 +738,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public MaterialBuilder getBuilder() {
-    if(builder == null) {
+    if (builder == null) {
       builder = new MaterialBuilderBase(this);
     }
     return builder;
@@ -745,17 +747,18 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   public static Material getColorMaterial(MaterialBuilder b, String name, Color color,
       MaterialActionHandler mouseAction, MaterialActionHandler mouseMove, MaterialActionHandler mouseOut) {
     b.push();
-    b.origin().addColorProperty("brush-color", color).background(color).onState("over").background(Color.yellow).fixedSize(40, 40);
+    b.origin().addColorProperty("brush-color", color).background(color).onState("over").background(Color.yellow)
+        .fixedSize(40, 40);
 
-    if(mouseAction != null) {
+    if (mouseAction != null) {
       b.handleMouseUp(mouseAction);
     }
 
-    if(mouseMove != null) {
+    if (mouseMove != null) {
       b.handleMouseMove(mouseMove);
     }
 
-    if(mouseOut != null) {
+    if (mouseOut != null) {
       b.handleMouseOut(mouseOut);
     }
     return b.build(name);
@@ -763,7 +766,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
   public static Material getPaletteMaterial(ColorPalette palette, MaterialBuilder b, MaterialActionHandler mouseAction,
       MaterialActionHandler mouseMove, MaterialActionHandler mouseOut) {
-    Color[]     colors     = palette.sort().getColors();
+    Color[] colors = palette.sort().getColors();
     Set<String> namesGroup = new HashSet<>();
     b.push();
     for (Color color : colors) {
@@ -773,9 +776,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     b.push();
 
     String names[] = namesGroup.toArray(new String[namesGroup.size()]);
-    int    border  = 5;
-    return b
-        .right(0.20f) //
+    int border = 5;
+    return b.right(0.20f) //
         .minimumSize(42, 45) //
         .subtractBorder(34, border, border, border) //
         .roundedClip(10, 10) //
@@ -787,19 +789,19 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private void createAndSwitchBrush(Color color) {
-    Brush      brush   = ctrl.createColorBrush(color);
-    JToolBar   toolbar = PixelPainter.tools;
+    Brush brush = ctrl.createColorBrush(color);
+    JToolBar toolbar = PixelPainter.tools;
     Set<Brush> brushes = new HashSet<Brush>();
     for (Component c : toolbar.getComponents()) {
-      if(c instanceof JButton) {
+      if (c instanceof JButton) {
         JButton but = (JButton) c;
-        if(but.getAction() instanceof BrushAction) {
+        if (but.getAction() instanceof BrushAction) {
           BrushAction b = (BrushAction) but.getAction();
           brushes.add(b.getBrush());
         }
       }
     }
-    if(!brushes.contains(brush)) {
+    if (!brushes.contains(brush)) {
       JButton but = toolbar.add(brush.createAsAction(this));
       but.setPreferredSize(PixelPainter.toolButtonSize);
     }
@@ -811,7 +813,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private Material getColorBarOverlayMaterial() {
-    if(this.colorbarMaterial == null) {
+    if (this.colorbarMaterial == null) {
       int border = 5;
       this.colorbarMaterial = getBuilder().right(0.10f).minimumSize(45, 45).subtractBorder(34, border, border, border)
           .roundedClip(10, 10).background(Color.red).build("colorbar");
@@ -822,14 +824,14 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   public static void onExit(int closeOp) {
     frame.setVisible(false);
     frame.dispose();
-    if(closeOp == JFrame.EXIT_ON_CLOSE) {
+    if (closeOp == JFrame.EXIT_ON_CLOSE) {
       System.exit(0);
     }
   }
 
   private static void setupMenus(final PixelPainter painter, final JFrame frame2, final int closeOp) {
-    JMenuBar  menubar  = new JMenuBar();
-    JMenu     file     = new JMenu("File");
+    JMenuBar menubar = new JMenuBar();
+    JMenu file = new JMenu("File");
     JMenuItem newImage = new JMenuItem("New");
     newImage.addActionListener(new ActionListener() {
       @Override
@@ -848,7 +850,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         int ret = jfc.showOpenDialog(frame2);
 
-        if(ret == JFileChooser.APPROVE_OPTION) {
+        if (ret == JFileChooser.APPROVE_OPTION) {
           painter.openNewFile(jfc.getSelectedFile());
 
           saveFileChooserSettings(jfc, FILE_CHOOSER.OPEN_IMAGE);
@@ -879,7 +881,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     file.add(exit);
     menubar.add(file);
 
-    JMenu     tools             = new JMenu("Tools");
+    JMenu tools = new JMenu("Tools");
     JMenuItem createSpriteSheet = new JMenuItem("Create Sprite Sheet");
     createSpriteSheet.addActionListener(new ActionListener() {
       @Override
@@ -895,11 +897,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         int ret = jfc.showOpenDialog(frame2);
 
-        if(ret == JFileChooser.APPROVE_OPTION) {
+        if (ret == JFileChooser.APPROVE_OPTION) {
           File file = jfc.getSelectedFile();
           try {
             BufferedImage bImg = ImageIO.read(file);
-            Rectangle     r    = new Rectangle(0, 0, bImg.getWidth(), bImg.getHeight());
+            Rectangle r = new Rectangle(0, 0, bImg.getWidth(), bImg.getHeight());
             sketchLocations.put(bImg, r);
             sketchImages.add(bImg);
           } catch (IOException e1) {
@@ -964,16 +966,16 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
         int ret = jfc.showOpenDialog(frame2);
 
-        if(ret == JFileChooser.APPROVE_OPTION) {
+        if (ret == JFileChooser.APPROVE_OPTION) {
           File file = jfc.getSelectedFile();
           try {
-            BufferedImage bImg      = ImageIO.read(file);
+            BufferedImage bImg = ImageIO.read(file);
             BufferedImage newFormat = new BufferedImage(bImg.getWidth(), bImg.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D    g         = newFormat.createGraphics();
+            Graphics2D g = newFormat.createGraphics();
             g.drawImage(bImg, 0, 0, null);
             g.dispose();
-            ColorPalette palette  = ColorPalette.createFromImage(file.getName(), newFormat);
-            Color        colors[] = palette.getColors();
+            ColorPalette palette = ColorPalette.createFromImage(file.getName(), newFormat);
+            Color colors[] = palette.getColors();
             System.out.println(colors.length);
             PalettePanel palettePane = new PalettePanel(palette);
             palettePane.addPropertyChangeListener(PalettePanel.COLOR_SELECTED, new PropertyChangeListener() {
@@ -1001,7 +1003,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         String response = JOptionPane.showInputDialog((Component) e.getSource(), "Enter the name for the new palette",
             "New Palette Name?", JOptionPane.OK_CANCEL_OPTION);
 
-        if(response != null && !response.trim().isEmpty()) {
+        if (response != null && !response.trim().isEmpty()) {
           (new Thread() {
             public void run() {
               PaletteEditor.editPalette(frame, paletteManager, response);
@@ -1011,7 +1013,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
     });
     paletteMenu.add(newPalette);
-    if(paletteManager != null && paletteManager.hasPalettes()) {
+    if (paletteManager != null && paletteManager.hasPalettes()) {
       paletteMenu.addSeparator();
       for (Map.Entry<String, ColorPalette> cp : paletteManager.getPalettes()) {
         painter.paletteAdded(paletteManager, cp.getKey(), cp.getValue());
@@ -1019,7 +1021,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     }
     menubar.add(paletteMenu);
 
-    JMenu     view       = new JMenu("View");
+    JMenu view = new JMenu("View");
     JMenuItem toggleGrid = new JCheckBoxMenuItem("Grid");
     toggleGrid.setSelected(gridOn);
     toggleGrid.addActionListener(new ActionListener() {
@@ -1046,12 +1048,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     toggleAnimation.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        JCheckBoxMenuItem item         = (JCheckBoxMenuItem) e.getSource();
-        boolean           newSelection = item.isSelected();
+        JCheckBoxMenuItem item = (JCheckBoxMenuItem) e.getSource();
+        boolean newSelection = item.isSelected();
         frame2.repaint();
-        if(newSelection && !animation) {
+        if (newSelection && !animation) {
           startAnimator(painter, frame2);
-        } else if(animator != null) {
+        } else if (animator != null) {
           animator.stop();
         }
         animation = newSelection;
@@ -1064,23 +1066,23 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   private static JMenuItem buildRecents(PixelPainter painter) {
-    JMenu recentsMenu = painter.recentsMenu; 
-    if(recentsMenu == null) {
+    JMenu recentsMenu = painter.recentsMenu;
+    if (recentsMenu == null) {
       painter.recentsMenu = recentsMenu = new JMenu("Recents");
     }
     recentsMenu.removeAll();
-    for(File file : Settings.getInstance().getRecentFiles()) {
+    for (File file : Settings.getInstance().getRecentFiles()) {
       String name = String.format("%s - %s", file.getName(), file.getParent());
-      
+
       recentsMenu.add(new AbstractAction(name) {
         @Override
         public void actionPerformed(ActionEvent e) {
           painter.openNewFile(file);
-        }     
+        }
       });
     }
     recentsMenu.validate();
-    
+
     return recentsMenu;
   }
 
@@ -1102,23 +1104,23 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
 
     int ret = jfc.showSaveDialog(frame);
 
-    if(ret == JFileChooser.APPROVE_OPTION) {
+    if (ret == JFileChooser.APPROVE_OPTION) {
       try {
-        String     extension  = "png";
-        File       file       = jfc.getSelectedFile();
+        String extension = "png";
+        File file = jfc.getSelectedFile();
         FileFilter fileFilter = jfc.getFileFilter();
-        if(fileFilter instanceof FileNameExtensionFilter) {
-          FileNameExtensionFilter filter     = (FileNameExtensionFilter) fileFilter;
-          String[]                extensions = filter.getExtensions();
-          if(!extensions[0].contains("*.*")) {
+        if (fileFilter instanceof FileNameExtensionFilter) {
+          FileNameExtensionFilter filter = (FileNameExtensionFilter) fileFilter;
+          String[] extensions = filter.getExtensions();
+          if (!extensions[0].contains("*.*")) {
             extension = extensions[0];
           }
         }
         boolean saved = false;
-        if(file.exists()) {
+        if (file.exists()) {
           ret = JOptionPane.showConfirmDialog(frame, "The file already exists do you still want to overwrite it!",
               "Overwrite Question?", JOptionPane.YES_NO_CANCEL_OPTION);
-          if(ret == JOptionPane.YES_OPTION) {
+          if (ret == JOptionPane.YES_OPTION) {
             this.getController().save(file, extension);
             saved = true;
           }
@@ -1127,7 +1129,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           this.getController().save(toSave, extension);
           saved = true;
         }
-        if(saved) {
+        if (saved) {
           saveFileChooserSettings(jfc, FILE_CHOOSER.SAVE_IMAGE);
           frame.setTitle(String.format("%s - %s", file.getName(), file.getParentFile().getAbsolutePath()));
         }
@@ -1140,10 +1142,10 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   public static Font getFontAwesome() {
-    if(fntAwesome == null) {
+    if (fntAwesome == null) {
       try {
         InputStream fntStream = PixelPainter.class.getClassLoader().getResourceAsStream("fa-solid-900.ttf");
-        if(fntStream != null) {
+        if (fntStream != null) {
           fntAwesome = Font.createFont(Font.TRUETYPE_FONT, fntStream);
           fntAwesome = fntAwesome.deriveFont(16f);
         } else {
@@ -1161,12 +1163,12 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   protected static void openNewFileDialog(Frame parent, PixelPainter painter) {
-    final JDialog      dlg = new JDialog(parent, "New File Dialog", true);
+    final JDialog dlg = new JDialog(parent, "New File Dialog", true);
     final NewFilePanel nfp = new NewFilePanel();
     dlg.setLayout(new BorderLayout());
     dlg.add(nfp);
-    JPanel             pane = new JPanel(new GridBagLayout());
-    GridBagConstraints c    = new GridBagConstraints();
+    JPanel pane = new JPanel(new GridBagLayout());
+    GridBagConstraints c = new GridBagConstraints();
     c.anchor = GridBagConstraints.EAST;
     c.insets = new Insets(5, 5, 5, 5);
     c.fill = GridBagConstraints.NONE;
@@ -1199,8 +1201,8 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     dlg.setLocationRelativeTo(parent);
     dlg.setVisible(true);
 
-    if(!nfp.isCancelled()) {
-      int width  = nfp.getImageWidth();
+    if (!nfp.isCancelled()) {
+      int width = nfp.getImageWidth();
       int height = nfp.getImageHeight();
 
       createNewImageFile(painter, width, height);
@@ -1223,26 +1225,26 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   protected static void startAnimator(PixelPainter painter, JFrame frame2) {
-    if(animator == null) {
+    if (animator == null) {
       animator = new PreviewAnimator(painter, frame2);
     }
     animator.startAnimator();
   }
 
   protected static void loadFileChooserSettings(JFileChooser jfc, FILE_CHOOSER chooserType, File directory) {
-    if(chooserType == FILE_CHOOSER.OPEN_IMAGE) {
-      if(directory != null) {
+    if (chooserType == FILE_CHOOSER.OPEN_IMAGE) {
+      if (directory != null) {
         jfc.setCurrentDirectory(directory);
       } else {
         jfc.setCurrentDirectory(ApplicationSettings.getInstance().getFileChooserDirectory(FILE_CHOOSER.OPEN_IMAGE));
       }
-    } else if(chooserType == FILE_CHOOSER.SAVE_IMAGE) {
+    } else if (chooserType == FILE_CHOOSER.SAVE_IMAGE) {
       String formats[] = ImageIO.getWriterFormatNames();
       Arrays.sort(formats);
       for (String format : formats) {
         jfc.addChoosableFileFilter(new FileNameExtensionFilter("Save " + format + " Images", format));
       }
-      if(directory != null) {
+      if (directory != null) {
         jfc.setCurrentDirectory(directory);
       } else {
         jfc.setCurrentDirectory(ApplicationSettings.getInstance().getFileChooserDirectory(FILE_CHOOSER.SAVE_IMAGE));
@@ -1255,26 +1257,26 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   protected void showTilePreview() {
-    final PixelPainter pp    = this;
-    JDialog            jdiag = new JDialog();
-    final JPanel       show  = new JPanel(new BorderLayout()) {
-                               @Override
-                               protected void paintComponent(Graphics init) {
-                                 super.paintComponent(init);
-                                 Dimension  d    = pp.getController().getSize();
-                                 int        rows = getHeight() / d.height + 1;
-                                 int        cols = getWidth() / d.width + 1;
-                                 Graphics2D g    = (Graphics2D) init.create();
-                                 for (int i = 0; i < rows; ++i) {
-                                   for (int k = 0; k < cols; ++k) {
-                                     pp.getController().render(g);
-                                     g.translate(d.width, 0.0);
-                                   }
-                                   g.translate(-((double) cols * d.width), d.height);
-                                 }
-                                 g.dispose();
-                               }
-                             };
+    final PixelPainter pp = this;
+    JDialog jdiag = new JDialog();
+    final JPanel show = new JPanel(new BorderLayout()) {
+      @Override
+      protected void paintComponent(Graphics init) {
+        super.paintComponent(init);
+        Dimension d = pp.getController().getSize();
+        int rows = getHeight() / d.height + 1;
+        int cols = getWidth() / d.width + 1;
+        Graphics2D g = (Graphics2D) init.create();
+        for (int i = 0; i < rows; ++i) {
+          for (int k = 0; k < cols; ++k) {
+            pp.getController().render(g);
+            g.translate(d.width, 0.0);
+          }
+          g.translate(-((double) cols * d.width), d.height);
+        }
+        g.dispose();
+      }
+    };
     show.setPreferredSize(new Dimension(300, 400));
     jdiag.setLayout(new BorderLayout());
     jdiag.add(show);
@@ -1307,7 +1309,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   }
 
   protected void openNewFile(File file) {
-    if(file.getName().endsWith(".pal")) {
+    if (file.getName().endsWith(".pal")) {
       FileInputStream fis;
       try {
         fis = new FileInputStream(file);
@@ -1323,7 +1325,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         ImageController newCtrl = SingleImageController.createNewInstance(file);
         this.changeImageController(newCtrl, file);
         controllers.put(file, newCtrl);
-        
+
         // reload all the image lists
         imageMenu.removeAll();
         imageMenu.setEnabled(!controllers.isEmpty());
@@ -1357,11 +1359,11 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
     paletteUse.addActionListener((e) -> {
       Overlay old = null;
       for (Overlay o : overlays) {
-        if(o instanceof ColorBarOverlay) {
+        if (o instanceof ColorBarOverlay) {
           old = o;
         }
       }
-      if(old != null) {
+      if (old != null) {
         overlays.remove(old);
       }
       overlays.add(new ColorBarOverlay(tools, this, palette));
@@ -1392,9 +1394,9 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
       }
     });
 
-    if(paletteMenu != null) {
+    if (paletteMenu != null) {
       Component menuComponent = paletteMenu.getMenuComponent(paletteMenu.getMenuComponentCount() - 1);
-      if(!(menuComponent instanceof JPopupMenu.Separator)) {
+      if (!(menuComponent instanceof JPopupMenu.Separator)) {
         paletteMenu.addSeparator();
       }
       JMenu paletteMenus = new JMenu(name);
@@ -1435,7 +1437,7 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
   @Override
   public void brushChanged(Brush old, Brush brushNew, ImageController ctrl) {
     for (Component c : tools.getComponents()) {
-      if(c instanceof JButton) {
+      if (c instanceof JButton) {
         // JButton but = (JButton) c;
         // should be set to defaults for all except selected
         // but.setBackground(new Color(0, 0, 0, 0));

@@ -38,7 +38,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
 
   @Override
   public Material build(String name) {
-    if(beingBuilt == null) {
+    if (beingBuilt == null) {
       beingBuilt = new Material(root);
     }
     Collections.reverse(renderFunctions);
@@ -73,24 +73,24 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
-  
+
   protected JComponent getRootComponent() {
     return rootComp;
   }
 
   protected void addRenderer(String state, Renderer renderer) {
-    if(state != null) {
+    if (state != null) {
       renderer = new RenderOnState(state, renderer);
     }
     this.renderFunctions.push(renderer);
   }
-  
+
   protected void setProperty(String name, MaterialRenderProperty<?> property, String state) {
-    if(state != null) {
+    if (state != null) {
       property = ApplyPropertyOnState.create(state, property);
     }
-    if(this.beingBuilt.get(name) != null) {
-      //need to chain property
+    if (this.beingBuilt.get(name) != null) {
+      // need to chain property
       property = ChainRenderProperty.create(property, this.beingBuilt.get(name));
     }
     this.beingBuilt.put(name, property);
@@ -105,7 +105,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
   @Override
   public MaterialBuilder background(Color background) {
     String state = null;
-    if(!this.states.empty()) {
+    if (!this.states.empty()) {
       state = this.states.pop();
     }
     addRenderer(state, (Graphics2D g, Material m) -> {
@@ -114,11 +114,11 @@ public class MaterialBuilderBase implements MaterialBuilder {
     setProperty("color", new ColorProperty(background), state);
     return this;
   }
-  
+
   @Override
   public MaterialBuilder text(String str, Color color) {
     String state = null;
-    if(!this.states.empty()) {
+    if (!this.states.empty()) {
       state = this.states.pop();
     }
     addRenderer(state, (Graphics2D g, Material m) -> {
@@ -127,6 +127,24 @@ public class MaterialBuilderBase implements MaterialBuilder {
       g.drawString(str, m.getX(), m.getY() + m.getHeight());
       g.setColor(old);
     });
+    return this;
+  }
+  
+  @Override
+  public MaterialBuilder shrinkToText(String str) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+
+      @Override
+      public int getWidth() {
+        return this.getFontMetrics().stringWidth(str);
+      }
+
+      @Override
+      public int getHeight() {
+        return this.getFontMetrics().getHeight() + this.getFontMetrics().getMaxDescent();
+      }
+      
+    };
     return this;
   }
 
@@ -175,7 +193,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
-  
+
   @Override
   public MaterialBuilder left(float percentage) {
     this.beingBuilt = new Material(this.beingBuilt) {
@@ -225,7 +243,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
-  
+
   @Override
   public MaterialBuilder handleMouseMove(MaterialActionHandler handler) {
     this.beingBuilt = new Material(this.beingBuilt) {
@@ -237,7 +255,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
-  
+
   @Override
   public MaterialBuilder handleMouseOut(MaterialActionHandler handler) {
     this.beingBuilt = new Material(this.beingBuilt) {
@@ -249,7 +267,6 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
-
 
   @Override
   public MaterialBuilder push() {
@@ -326,4 +343,88 @@ public class MaterialBuilderBase implements MaterialBuilder {
     return this;
   }
 
+  @Override
+  public MaterialBuilder image(MaterialBuilderDrawFunc drawFunc) {
+    this.beingBuilt = new Material(this.beingBuilt);
+    this.beingBuilt.addRenderer(new Renderer() {
+
+      @Override
+      public void draw(Graphics2D g, Material m) {
+        drawFunc.draw(g, m);
+      }
+
+    });
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder above(String name) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public int getY() {
+        Material comp = MaterialBuilderBase.this.get(name);
+        return comp.getY() - (this.getHeight());
+      }
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder leftOf(String name, AlignMode mode) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public int getX() {
+        Material m = MaterialBuilderBase.this.get(name);
+        int x = this.parent.getX();
+        if (mode == AlignMode.INSIDE) {
+          x = m.getX();
+        } else if (mode == AlignMode.OUTSIDE) {
+          x = m.getX() - this.getWidth();
+        }
+        return x;
+      }
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder percentage(int outOf100) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public int getWidth() {
+        return (int) (this.parent.getWidth() * (outOf100/100.0f));
+      }
+
+      @Override
+      public int getHeight() {
+        return (int) (this.parent.getHeight() * (outOf100/100.0f));
+      }
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder center(String name) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      private Material getMat(String name) {
+        if(name.equals("root")) {
+          return root;
+        }
+        return MaterialBuilderBase.this.get(name);
+      }
+      
+      @Override
+      public int getX() {
+        Material comp = getMat(name);
+        return (comp.getX() + comp.getWidth() / 2) - (this.getWidth() / 2);
+      }
+
+      @Override
+      public int getY() {
+        Material comp = getMat(name);
+        return (comp.getY() + comp.getHeight() / 2) - (this.getHeight() / 2);
+      }
+    };
+    return this;
+  }
 }

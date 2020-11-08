@@ -25,7 +25,7 @@ public class MaterialComponentBuilder extends MaterialBuilderBase {
       @Override
       public void paint(Graphics g) {
         super.paint(g);
-        Material.draw(m, (Graphics2D)g);
+        Material.draw(m, (Graphics2D) g);
       }
 
       @Override
@@ -67,15 +67,14 @@ public class MaterialComponentBuilder extends MaterialBuilderBase {
       public int getHeight() {
         return m.getHeight();
       }
-      
-      
+
     };
     wrapper.addMouseListener(new MouseAdapter() {
 
       @Override
       public void mousePressed(MouseEvent e) {
         Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-        if(r.contains(e.getPoint())) {
+        if (r.contains(e.getPoint())) {
           m.mouseDown(e);
           e.consume();
         }
@@ -86,7 +85,7 @@ public class MaterialComponentBuilder extends MaterialBuilderBase {
       @Override
       public void mouseReleased(MouseEvent e) {
         Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-        if(r.contains(e.getPoint())) {
+        if (r.contains(e.getPoint())) {
           m.mouseUp(e);
           e.consume();
         }
@@ -105,13 +104,25 @@ public class MaterialComponentBuilder extends MaterialBuilderBase {
       @Override
       public void mouseMoved(MouseEvent e) {
         Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-        if(r.contains(e.getPoint())) {
+        boolean contains = r.contains(e.getPoint());
+
+        if (contains && !m.isState("mouseOver") && !m.isState("mouseIn")) {
+          m.setState("mouseIn");
+          m.mouseIn(e);
+          e.consume();
+        } else if (contains && !m.isState("mouseOver") && m.isState("mouseIn")) {
           m.setState("mouseOver");
           m.mouseOver(e);
           e.consume();
-        } else if(m.isState("mouseOver")) {
+        } else if(contains && m.isState("mouseOver")) {
+          m.mouseOver(e);
+          e.consume();
+        } else if (!contains && (m.isState("mouseOver") || m.isState("mouseIn"))) {
+          m.unsetState("mouseIn");
+          m.unsetState("mouseOver");
           m.setState("mouseOut");
           m.mouseOut(e);
+          e.consume();
         }
 
         wrapper.repaint();
@@ -120,10 +131,10 @@ public class MaterialComponentBuilder extends MaterialBuilderBase {
     });
     return wrapper;
   }
-  
+
   @Override
   public Material build(String name) {
-    Material   m       = super.build(name);
+    Material m = super.build(name);
     this.getRootComponent().add(wrap(m));
     return m;
   }

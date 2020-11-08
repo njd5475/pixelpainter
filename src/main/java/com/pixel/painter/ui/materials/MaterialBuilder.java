@@ -29,6 +29,8 @@ public interface MaterialBuilder {
   MaterialBuilder left(float percentage);
   
   MaterialBuilder leftOf(String name, AlignMode mode);
+  
+  MaterialBuilder rightOf(String name, AlignMode mode);
 
   MaterialBuilder snapToRight();
 
@@ -43,6 +45,8 @@ public interface MaterialBuilder {
   MaterialBuilder handleMouseMove(MaterialActionHandler handler);
 
   MaterialBuilder handleMouseOut(MaterialActionHandler handler);
+  
+  MaterialBuilder handleMouseIn(MaterialActionHandler handler);
 
   MaterialBuilder push();
 

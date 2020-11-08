@@ -87,6 +87,7 @@ import com.pixel.painter.brushes.BrushChangeListener;
 import com.pixel.painter.brushes.EraseBrush;
 import com.pixel.painter.brushes.FillMode;
 import com.pixel.painter.controller.ImageController;
+import com.pixel.painter.controller.LayeredController;
 import com.pixel.painter.controller.SingleImageController;
 import com.pixel.painter.controller.SpriteController;
 import com.pixel.painter.model.ApplicationSettings;
@@ -352,16 +353,27 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
         }
 
         for (Material m : materials) {
-          Rectangle2D r = new Rectangle2D.Float(m.getX(), m.getY(), m.getWidth(), m.getHeight());
-          if (r.contains(e.getPoint())) {
+          boolean contains = m.contains(e.getPoint());
+
+          if (contains && !m.isState("mouseOver") && !m.isState("mouseIn")) {
+            m.setState("mouseIn");
+            m.mouseIn(e);
+            e.consume();
+          } else if (contains && !m.isState("mouseOver") && m.isState("mouseIn")) {
             m.setState("mouseOver");
             m.mouseOver(e);
             e.consume();
-            break;
-          } else if (m.isState("mouseOver")) {
+          } else if (contains && m.isState("mouseOver")) {
+            m.mouseOver(e);
+            // Do not e.consume();
+          } else if (!contains && (m.isState("mouseOver") || m.isState("mouseIn"))) {
+            m.unsetState("mouseIn");
+            m.unsetState("mouseOver");
             m.setState("mouseOut");
             m.mouseOut(e);
+            e.consume();
           }
+
         }
 
         repaint();
@@ -719,17 +731,105 @@ public class PixelPainter extends JPanel implements PaletteListener, BrushChange
           m.unsetState("over");
           pp.repaint();
         });
-    pp.addMaterial(
-        pp.getBuilder().push().percentage(70).center("root").build("canvas"));
-    pp.addMaterial(pp.getBuilder().push().background(new Color(255, 0, 255)).text("1", Color.black).shrinkToText("1")
-        .above("canvas").leftOf("canvas", AlignMode.INSIDE).build("layer1"));
+    pp.addMaterial(pp.getBuilder().push().percentage(70).center("root").build("canvas"));
+
+    String label = "1";
+    String compLabel = String.format("layer%s", label);
+    String nextTo = "canvas";
+    final LayeredController layerCtrl = new LayeredController();
+    final int firstLayer = 1;
+    pp.addMaterial(pp.getBuilder().push().background(new Color(100, 100, 100)).onState("mouseOver")
+        .background(new Color(255, 0, 255)) //
+        .onState("layerOn").background(Color.yellow) //
+        .text(label, Color.black).shrinkToText(label).above("canvas").leftOf(nextTo, AlignMode.INSIDE)
+        .handleMouseUp(new MaterialActionHandler() {
+
+          @Override
+          public void handleAction(Material m, String action) {
+
+            // check to see if we have a layer that exists first
+            if (!layerCtrl.hasLayer(firstLayer)) {
+              SingleImageController newLayerCtrl = new SingleImageController(
+                  new BufferedImage(pp.getImageController().getImage().getWidth(),
+                      pp.getImageController().getImage().getHeight(), BufferedImage.TYPE_INT_ARGB),
+                  true);
+
+              layerCtrl.putLayer(newLayerCtrl, firstLayer);
+            }
+
+            if (pp.getImageController() != layerCtrl) {
+              pp.changeImageController(layerCtrl, pp.getCurrentFile());
+            }
+
+            ImageController ctrl = pp.getImageController();
+            if (ctrl instanceof LayeredController) {
+              LayeredController lctrl = (LayeredController) ctrl;
+              lctrl.changeLayer(firstLayer);
+              if (lctrl.isVisible(firstLayer)) {
+                m.setState("layerOn");
+              } else {
+                m.unsetState("layerOn");
+              }
+            }
+          }
+        }).build(compLabel));
+    nextTo = compLabel;
+    for (int i = 2; i < 10; ++i) {
+      final int layer = i;
+      label = String.valueOf(i);
+      compLabel = String.format("layer%s", label);
+      pp.addMaterial(pp.getBuilder().push().background(new Color(100, 100, 100))
+          // .onState("mouseOut").background(new Color(100, 100, 100))
+          .onState("mouseOver").background(new Color(255, 0, 255)) //
+          .onState("layerOn").background(Color.yellow) //
+          .text(label, Color.black).shrinkToText(label).above("canvas").rightOf(nextTo, AlignMode.OUTSIDE)
+          .handleMouseUp(new MaterialActionHandler() {
+
+            @Override
+            public void handleAction(Material m, String action) {
+              if (!layerCtrl.hasLayer(layer)) {
+                SingleImageController newLayerCtrl = new SingleImageController(
+                    new BufferedImage(pp.getImageController().getImage().getWidth(),
+                        pp.getImageController().getImage().getHeight(), BufferedImage.TYPE_INT_ARGB),
+                    true);
+
+                layerCtrl.putLayer(newLayerCtrl, layer);
+              }
+
+              if (pp.getImageController() != layerCtrl) {
+                pp.changeImageController(layerCtrl, pp.getCurrentFile());
+              }
+
+              ImageController ctrl = pp.getImageController();
+              if (ctrl instanceof LayeredController) {
+                LayeredController lctrl = (LayeredController) ctrl;
+                lctrl.changeLayer(layer);
+                if (lctrl.isVisible(layer)) {
+                  m.setState("layerOn");
+                } else {
+                  m.unsetState("layerOn");
+                }
+              }
+
+            }
+          }).build(compLabel));
+      nextTo = compLabel;
+    }
+
     pp.addMaterial(paletteMaterial);
+
     Material preview = pp.getBuilder().push().fixedSize(100, 100).image((g, m) -> {
-      Image img = pp.getImageController().getImage();
-      g.drawImage(img, m.getX(), m.getY(), m.getX() + m.getWidth(), m.getY() + m.getHeight(), 0, 0, img.getWidth(null),
-          img.getHeight(null), null);
+      g.setColor(new Color(255, 255, 255, 0));
+      g.fillRect(m.getX(), m.getY(), m.getWidth(), m.getHeight());
+      Graphics2D previewG = (Graphics2D) g.create();
+      previewG.setClip(m.getX(), m.getY(), m.getWidth(), m.getHeight());
+      previewG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
+      previewG.translate(m.getX(), m.getY());
+      pp.getImageController().render(previewG, m.getWidth(), m.getHeight());
+      previewG.dispose();
     }).build("Preview");
     pp.addMaterial(preview);
+
     overlays.add(new ColorBarOverlay(tools, pp, paletteManager.get("default")));
     overlays.add(new SpriteFrameBarOverlay(tools, pp, sprites));
     overlays.add(new ColorInfoOverlay(tools, pp));

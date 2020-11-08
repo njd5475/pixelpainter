@@ -3,7 +3,9 @@ package com.pixel.painter.ui.materials;
 import java.awt.AlphaComposite;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -123,6 +125,11 @@ public class Material {
   public MaterialBuilder derive() {
     return new MaterialBuilderBase(this);
   }
+  
+  public boolean contains(Point pt) {
+    Rectangle2D r = new Rectangle2D.Float(this.getX(), this.getY(), this.getWidth(), this.getHeight());
+    return r.contains(pt);
+  }
 
   public int getX() {
     if (this.parent == null) {
@@ -155,6 +162,12 @@ public class Material {
   public void mouseOut(MouseEvent e) {
     if (this.parent != null) {
       this.parent.mouseOut(e);
+    }
+  }
+  
+  public void mouseIn(MouseEvent e) {
+    if(this.parent != null) {
+      this.parent.mouseIn(e);
     }
   }
 

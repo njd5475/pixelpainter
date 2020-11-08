@@ -129,7 +129,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
     });
     return this;
   }
-  
+
   @Override
   public MaterialBuilder shrinkToText(String str) {
     this.beingBuilt = new Material(this.beingBuilt) {
@@ -143,7 +143,7 @@ public class MaterialBuilderBase implements MaterialBuilder {
       public int getHeight() {
         return this.getFontMetrics().getHeight() + this.getFontMetrics().getMaxDescent();
       }
-      
+
     };
     return this;
   }
@@ -392,12 +392,12 @@ public class MaterialBuilderBase implements MaterialBuilder {
     this.beingBuilt = new Material(this.beingBuilt) {
       @Override
       public int getWidth() {
-        return (int) (this.parent.getWidth() * (outOf100/100.0f));
+        return (int) (this.parent.getWidth() * (outOf100 / 100.0f));
       }
 
       @Override
       public int getHeight() {
-        return (int) (this.parent.getHeight() * (outOf100/100.0f));
+        return (int) (this.parent.getHeight() * (outOf100 / 100.0f));
       }
     };
     return this;
@@ -407,12 +407,12 @@ public class MaterialBuilderBase implements MaterialBuilder {
   public MaterialBuilder center(String name) {
     this.beingBuilt = new Material(this.beingBuilt) {
       private Material getMat(String name) {
-        if(name.equals("root")) {
+        if (name.equals("root")) {
           return root;
         }
         return MaterialBuilderBase.this.get(name);
       }
-      
+
       @Override
       public int getX() {
         Material comp = getMat(name);
@@ -423,6 +423,36 @@ public class MaterialBuilderBase implements MaterialBuilder {
       public int getY() {
         Material comp = getMat(name);
         return (comp.getY() + comp.getHeight() / 2) - (this.getHeight() / 2);
+      }
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder rightOf(String name, AlignMode mode) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public int getX() {
+        Material m = MaterialBuilderBase.this.get(name);
+        int x = this.parent.getX();
+        if (mode == AlignMode.INSIDE) {
+          x = m.getX() + m.getWidth() - this.getWidth();
+        } else if (mode == AlignMode.OUTSIDE) {
+          x = m.getX() + m.getWidth();
+        }
+        return x;
+      }
+    };
+    return this;
+  }
+
+  @Override
+  public MaterialBuilder handleMouseIn(MaterialActionHandler handler) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public void mouseIn(MouseEvent e) {
+        super.mouseOut(e);
+        handler.handleAction(this, "MouseIn");
       }
     };
     return this;

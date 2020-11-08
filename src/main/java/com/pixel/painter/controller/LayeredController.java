@@ -35,38 +35,39 @@ public class LayeredController implements ImageController {
   private Color                               fillColor;
   private Set<ModifyListener>                 listeners;
   private ModifyListener                      oneListener;
-  private Integer currentIndex;
+  private Integer                             currentIndex;
 
   public LayeredController() {
-    listeners   = new HashSet<>();
+    listeners = new HashSet<>();
     oneListener = new ModifyListener() {
 
-                  @Override
-                  public void modified(ImageController imgCtrl) {
-                    for (ModifyListener l : listeners) {
-                      l.modified(imgCtrl);
-                    }
-                  }
-                };
+      @Override
+      public void modified(ImageController imgCtrl) {
+        for (ModifyListener l : listeners) {
+          l.modified(imgCtrl);
+        }
+      }
+    };
   }
 
   public void addLayer(ImageController ctrl) {
     Dimension size = ctrl.getSize();
     layers.put(layers.size() + 1, ctrl);
-    width  = Math.max(width, size.width);
+    width = Math.max(width, size.width);
     height = Math.max(height, size.height);
-    if(currentCtrl == null) {
+    if (currentCtrl == null) {
       changeLayer(layers.size());
     }
     ctrl.addModifyListener(oneListener);
   }
 
-  public void toggleLayer(int layerIndex) {
-    if(this.invisibleLayers.contains(layerIndex)) {
+  public boolean toggleLayer(int layerIndex) {
+    if (this.invisibleLayers.contains(layerIndex)) {
       this.invisibleLayers.remove(layerIndex);
     } else {
       this.invisibleLayers.add(layerIndex);
     }
+    return this.isVisible(layerIndex);
   }
 
   public int getLayerCount() {
@@ -75,13 +76,13 @@ public class LayeredController implements ImageController {
 
   public void changeLayer(int index) {
     ImageController ctrl = layers.get(index);
-    if(ctrl != null) {
-      if(currentCtrl != ctrl) {
+    if (ctrl != null) {
+      if (currentCtrl != ctrl) {
         currentCtrl = ctrl;
-        if(currentBrush != null) {
+        if (currentBrush != null) {
           currentCtrl.setBrush(currentBrush);
         }
-        if(fillColor != null) {
+        if (fillColor != null) {
           currentCtrl.setFillColor(fillColor);
         }
       } else {
@@ -127,7 +128,7 @@ public class LayeredController implements ImageController {
   public void render(Graphics2D g) {
     Set<Entry<Integer, ImageController>> entries = layers.entrySet();
     for (Entry<Integer, ImageController> entry : entries) {
-      if(isVisible(entry.getKey())) {
+      if (isVisible(entry.getKey())) {
         entry.getValue().render(g);
       }
     }
@@ -137,7 +138,7 @@ public class LayeredController implements ImageController {
   public void render(Graphics2D g, int width, int height) {
     Set<Entry<Integer, ImageController>> entries = layers.entrySet();
     for (Entry<Integer, ImageController> entry : entries) {
-      if(isVisible(entry.getKey())) {
+      if (isVisible(entry.getKey())) {
         entry.getValue().render(g, width, height);
       }
     }
@@ -156,7 +157,7 @@ public class LayeredController implements ImageController {
 
   private RenderedImage getVisibleImage() {
     BufferedImage bImg = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D    g    = bImg.createGraphics();
+    Graphics2D g = bImg.createGraphics();
     this.render(g);
     g.dispose();
     return bImg;
@@ -164,11 +165,11 @@ public class LayeredController implements ImageController {
 
   @Override
   public Color sample(int x, int y) {
-    Color                                color   = null;
+    Color color = null;
     Set<Entry<Integer, ImageController>> entries = layers.entrySet();
     for (Entry<Integer, ImageController> entry : entries) {
       color = entry.getValue().sample(x, y);
-      if(color != null) {
+      if (color != null) {
         break;
       }
     }
@@ -256,6 +257,21 @@ public class LayeredController implements ImageController {
 
   public Integer getCurrentLayer() {
     return currentIndex;
+  }
+
+  public void putLayer(ImageController ctrl, int i) {
+    Dimension size = ctrl.getSize();
+    layers.put(i, ctrl);
+    width = Math.max(width, size.width);
+    height = Math.max(height, size.height);
+    if (currentCtrl == null) {
+      changeLayer(i);
+    }
+    ctrl.addModifyListener(oneListener);
+  }
+
+  public boolean hasLayer(int layer) {
+    return this.layers.containsKey(layer);
   }
 
 }

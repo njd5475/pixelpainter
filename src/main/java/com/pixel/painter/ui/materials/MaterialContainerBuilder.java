@@ -146,6 +146,22 @@ public class MaterialContainerBuilder {
         }
 
         @Override
+        public void mouseIn(MouseEvent e) {
+          super.mouseOut(e);
+          for (String name : componentNames) {
+            Material    m = MaterialContainerBuilder.this.parent.get(name);
+            Rectangle2D r = new Rectangle2D.Float(this.getX() + m.getX(), this.getY() + m.getY(), m.getWidth(),
+                m.getHeight());
+            if(r.contains(e.getPoint())) {
+              if(!m.isState("mouseContainerItemOver")) {
+                m.setState("mouseContainerItemOver");
+                m.mouseIn(e);
+              }
+            }
+          }
+        }
+        
+        @Override
         public void mouseClicked() {
           // TODO Auto-generated method stub
           super.mouseClicked();

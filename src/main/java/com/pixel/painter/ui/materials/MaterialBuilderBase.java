@@ -457,4 +457,15 @@ public class MaterialBuilderBase implements MaterialBuilder {
     };
     return this;
   }
+
+  @Override
+  public MaterialBuilder top(float offset) {
+    this.beingBuilt = new Material(this.beingBuilt) {
+      @Override
+      public int getY() {
+        return (int) (rootComp.getY() + offset);
+      }
+    };
+    return this;
+  }
 }

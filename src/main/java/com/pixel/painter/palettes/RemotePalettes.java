@@ -10,12 +10,17 @@ import com.pixel.painter.rest.RestCalls;
 
 public class RemotePalettes {
 
-  public static ColorPalette[] retreive(int numOfColors, int page) {
+  public static enum COLOR_NUMBER_FILTER_TYPE { ANY, MIN, MAX, EXACT };
+  public static enum SORTING_TYPES { ALPHABETICAL, DOWNLOADS, DEFAULT, NEWEST };
+  
+	
+  public static ColorPalette[] retreive(int numOfColors, COLOR_NUMBER_FILTER_TYPE colorNumFilter, SORTING_TYPES sortFilter, int page) {
     String tag = "";
-    String numberFilter = "any";
-    String sortingType = "default";
+    String numberFilter = colorNumFilter.name().toLowerCase();
+    String sortingType = sortFilter.name().toLowerCase();
     String params = String.format("colorNumberFilterType=%s&colorNumber=%d&page=%d&tag=%s&sortingType=%s", numberFilter, numOfColors, page, tag, sortingType);
     String makeCall = String.format("https://lospec.com/palette-list/load?%s", params);
+   
     Map<String, Object> response = RestCalls.makeRestCall(makeCall);
     List<Map<String, Object>> palettesObj = (List<Map<String, Object>>) response.get("palettes");
     List<ColorPalette> palettes = new LinkedList<>();

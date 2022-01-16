@@ -587,6 +587,9 @@ public final class Json {
 
     public String[] getStringArray(String key) {
       LinkedList<String> strs = (LinkedList<String>) wrap.get(key);
+      if(strs == null) {
+        return null;
+      }
       return strs.toArray(new String[strs.size()]);
     }
     
